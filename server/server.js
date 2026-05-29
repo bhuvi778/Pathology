@@ -9,11 +9,20 @@ dotenv.config({ path: path.join(__dirname, '.env'), override: true });
 
 const app = express();
 
-let clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-if (clientUrl.endsWith('/')) {
-  clientUrl = clientUrl.slice(0, -1);
-}
-app.use(cors({ origin: clientUrl, credentials: true }));
+let clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').trim().replace(/\/+$/, '');
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    const sanitizedOrigin = origin.trim().replace(/\/+$/, '');
+    if (sanitizedOrigin === clientUrl || sanitizedOrigin === 'http://localhost:5173') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -49,7 +58,10 @@ const startServer = async () => {
       console.error('Error reactivating users:', error.message);
     }
   }
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Allowed CORS Origin: ${clientUrl}`);
+  });
 };
 
 startServer();
