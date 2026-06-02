@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard, Users, UserCog, TestTube, FileText, CreditCard,
   Calendar, UserPlus, Stethoscope, ClipboardList, Settings, X, FlaskConical,
-  ChevronRight, ShieldCheck
+  ChevronRight, ShieldCheck, Activity
 } from 'lucide-react';
 
 const adminNav = [
@@ -22,6 +22,7 @@ const receptionNav = [
   { label: 'New Patient', icon: UserPlus, path: '/reception/register' },
   { label: 'Appointments', icon: Calendar, path: '/reception/appointments' },
   { label: 'New Appointment', icon: ClipboardList, path: '/reception/new-appointment' },
+  { label: 'Workflow', icon: Activity, path: '/reception/workflow' },
   { label: 'View Reports', icon: FileText, path: '/reception/view-reports' },
   { label: 'All Patients', icon: Users, path: '/reception/patients' },
   { label: 'Billing', icon: CreditCard, path: '/reception/billing' },
