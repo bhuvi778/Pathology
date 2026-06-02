@@ -22,6 +22,7 @@ const receptionNav = [
   { label: 'New Patient', icon: UserPlus, path: '/reception/register' },
   { label: 'Appointments', icon: Calendar, path: '/reception/appointments' },
   { label: 'New Appointment', icon: ClipboardList, path: '/reception/new-appointment' },
+  { label: 'View Reports', icon: FileText, path: '/reception/view-reports' },
   { label: 'All Patients', icon: Users, path: '/reception/patients' },
   { label: 'Billing', icon: CreditCard, path: '/reception/billing' },
 ];
