@@ -17,6 +17,7 @@ import NewAppointment from './pages/receptionist/NewAppointment';
 import Billing from './pages/receptionist/Billing';
 import ViewReportsReception from './pages/receptionist/ViewReports';
 import PatientWorkflow from './pages/receptionist/PatientWorkflow';
+import SampleCollection from './pages/receptionist/SampleCollection';
 import DoctorDashboard from './pages/doctor/DoctorDashboard';
 import PatientQueue from './pages/doctor/PatientQueue';
 import EnterResults from './pages/doctor/EnterResults';
@@ -61,6 +62,7 @@ function AppRoutes() {
         <Route path="reception/register" element={<ProtectedRoute roles={['admin', 'receptionist']}><RegisterPatient /></ProtectedRoute>} />
         <Route path="reception/appointments" element={<ProtectedRoute roles={['admin', 'receptionist']}><Appointments /></ProtectedRoute>} />
         <Route path="reception/new-appointment" element={<ProtectedRoute roles={['admin', 'receptionist']}><NewAppointment /></ProtectedRoute>} />
+        <Route path="reception/sample-collection" element={<ProtectedRoute roles={['admin', 'receptionist']}><SampleCollection /></ProtectedRoute>} />
         <Route path="reception/workflow" element={<ProtectedRoute roles={['admin', 'receptionist']}><PatientWorkflow /></ProtectedRoute>} />
         <Route path="reception/view-reports" element={<ProtectedRoute roles={['admin', 'receptionist']}><ViewReportsReception /></ProtectedRoute>} />
         <Route path="reception/billing" element={<ProtectedRoute roles={['admin', 'receptionist']}><Billing /></ProtectedRoute>} />
