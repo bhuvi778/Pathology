@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Users, Clock, CreditCard, UserPlus, ClipboardList, TrendingUp } from 'lucide-react';
+import { Calendar, Users, Clock, CreditCard, UserPlus, ClipboardList, TrendingUp, FileText, Phone } from 'lucide-react';
 import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import api from '../../utils/api';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function ReceptionDashboard() {
   const [data, setData] = useState(null);
@@ -22,6 +23,7 @@ export default function ReceptionDashboard() {
     { label: 'Register New Patient', icon: UserPlus, path: '/reception/register', color: 'bg-primary-600 hover:bg-primary-700', desc: 'Add a new patient to the system' },
     { label: 'New Appointment', icon: ClipboardList, path: '/reception/new-appointment', color: 'bg-green-600 hover:bg-green-700', desc: 'Schedule tests for a patient' },
     { label: 'View Appointments', icon: Calendar, path: '/reception/appointments', color: 'bg-purple-600 hover:bg-purple-700', desc: "Today's appointment list" },
+    { label: 'View Reports', icon: FileText, path: '/reception/view-reports', color: 'bg-blue-600 hover:bg-blue-700', desc: 'View & share patient reports' },
     { label: 'Billing', icon: CreditCard, path: '/reception/billing', color: 'bg-amber-600 hover:bg-amber-700', desc: 'Manage payments' },
   ];
 
@@ -33,7 +35,7 @@ export default function ReceptionDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {quickActions.map(action => (
           <button key={action.path} onClick={() => navigate(action.path)}
             className={`${action.color} text-white rounded-xl p-4 text-left transition-all hover:shadow-lg hover:-translate-y-0.5`}>
