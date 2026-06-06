@@ -10,6 +10,7 @@ import AllPatients from './pages/admin/AllPatients';
 import AllReports from './pages/admin/AllReports';
 import AllBills from './pages/admin/AllBills';
 import LabSettings from './pages/admin/LabSettings';
+import FillReportReading from './pages/admin/FillReportReading';
 import ReceptionDashboard from './pages/receptionist/ReceptionDashboard';
 import RegisterPatient from './pages/receptionist/RegisterPatient';
 import Appointments from './pages/receptionist/Appointments';
@@ -54,6 +55,7 @@ function AppRoutes() {
         <Route path="admin/users" element={<ProtectedRoute roles={['admin']}><ManageUsers /></ProtectedRoute>} />
         <Route path="admin/patients" element={<ProtectedRoute roles={['admin']}><AllPatients /></ProtectedRoute>} />
         <Route path="admin/reports" element={<ProtectedRoute roles={['admin']}><AllReports /></ProtectedRoute>} />
+        <Route path="admin/fill-report/:appointmentId" element={<ProtectedRoute roles={['admin']}><FillReportReading /></ProtectedRoute>} />
         <Route path="admin/bills" element={<ProtectedRoute roles={['admin']}><AllBills /></ProtectedRoute>} />
         <Route path="admin/settings" element={<ProtectedRoute roles={['admin']}><LabSettings /></ProtectedRoute>} />
         {/* Receptionist Routes */}

@@ -147,6 +147,16 @@ Please check your portal for details.
                   <td className="table-td text-slate-500 text-sm">{r.enteredBy?.name || '—'}</td>
                   <td className="table-td">
                     <div className="flex items-center gap-1 flex-wrap">
+                      {/* Fill/Enter Report Results */}
+                      {['pending', 'entered'].includes(r.status) && (
+                        <button
+                          onClick={() => navigate(`/admin/fill-report/${r.appointment?._id || r.appointment}`)}
+                          title="Fill Report Reading"
+                          className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-600 border border-purple-100"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {/* Open appointment to enter/view results */}
                       <button
                         onClick={() => navigate(`/doctor/results/${r.appointment?._id || r.appointment}`)}
