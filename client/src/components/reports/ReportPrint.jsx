@@ -44,13 +44,8 @@ export default function ReportPrint({ report, appointment }) {
           <span>{patient?.bloodGroup || 'N/A'}</span>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Ref. Doctor:</span>
-          <span>{doctor?.name || appointment?.referredBy || 'Self'}</span>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Report Date:</span>
           <span>{formatDate(report?.reportDate || new Date(), 'dd/MM/yyyy')}</span>
-        </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Report ID:</span>
           <span style={{ fontFamily: 'monospace' }}>{report?.reportId}</span>
