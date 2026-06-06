@@ -40,9 +40,13 @@ export default function ViewReports() {
   useEffect(() => { load(); }, [statusFilter, page, user]);
 
   const doPrint = async (report) => {
-    const fullReport = await api.get(`/reports/${report._id}`);
-    setPrintData(fullReport.data);
-    setTimeout(handlePrint, 100);
+    try {
+      const fullReport = await api.get(`/reports/${report._id}`);
+      setPrintData(fullReport.data);
+      setTimeout(handlePrint, 100);
+    } catch {
+      console.error('Could not load report for printing');
+    }
   };
 
   return (
@@ -109,7 +113,6 @@ export default function ViewReports() {
         )}
       </div>
 
-      {/* Hidden print */}
       <div className="hidden">
         <div ref={printRef}>
           {printData && <ReportPrint report={printData} appointment={printData.appointment} />}

@@ -23,6 +23,11 @@ export default function EnterResults() {
 
   const handlePrint = useReactToPrint({ content: () => printRef.current });
 
+  const doPrint = (report) => {
+    setPrintReport(report);
+    setTimeout(handlePrint, 100);
+  };
+
   const load = async () => {
     try {
       const [aptRes, rptRes] = await Promise.all([
@@ -152,7 +157,7 @@ export default function EnterResults() {
             <div className="flex items-center gap-2">
               {report.status !== 'pending' && (
                 <button
-                  onClick={() => { setPrintReport(report); setTimeout(handlePrint, 100); }}
+                  onClick={() => doPrint(report)}
                   className="btn-secondary py-2 px-3 flex items-center gap-1.5 text-sm"
                 >
                   <Printer className="w-4 h-4" /> Print

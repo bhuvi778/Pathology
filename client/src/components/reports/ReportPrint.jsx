@@ -12,22 +12,11 @@ export default function ReportPrint({ report, appointment }) {
   const doctor = report?.doctor || appointment?.doctor;
 
   const labSettings = JSON.parse(localStorage.getItem('labSettings') || '{}');
-  const labName = labSettings.labName || 'Shri Dhanvantari Pathology & Diagnostic Centre';
-  const labAddress = labSettings.labAddress || '42, Nehru Nagar, Near District Hospital, Lucknow, Uttar Pradesh - 226001';
-  const labPhone = labSettings.labPhone || '+91-522-2601234';
   const labDirector = labSettings.labDirector || 'Dr. Rajesh Kumar Sharma';
   const labDirectorQual = labSettings.labDirectorQualification || 'MBBS, MCPS (Pathology)';
-  const reportFooter = labSettings.reportFooter || 'This report is for clinical use only. Please consult your physician for interpretation.';
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000', padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', borderBottom: '3px solid #2563eb', paddingBottom: '12px', marginBottom: '16px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: 'bold', margin: '0 0 4px 0', color: '#1e3a8a' }}>{labName}</h1>
-        <p style={{ margin: '2px 0', fontSize: '11px', color: '#4b5563' }}>{labAddress}</p>
-        <p style={{ margin: '2px 0', fontSize: '11px', color: '#4b5563' }}>Tel: {labPhone} | Email: {labSettings.labEmail}</p>
-        {labSettings.registrationNumber && <p style={{ margin: '4px 0', fontSize: '10px', color: '#6b7280' }}>Reg No: {labSettings.registrationNumber}</p>}
-      </div>
 
       {/* Report Title */}
       <div style={{ textAlign: 'center', marginBottom: '16px' }}>
@@ -132,12 +121,6 @@ export default function ReportPrint({ report, appointment }) {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Footer */}
-      <div style={{ marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '8px', textAlign: 'center', fontSize: '9px', color: '#9ca3af' }}>
-        <p>{reportFooter}</p>
-        <p style={{ marginTop: '4px' }}>Generated: {formatDate(new Date(), 'dd/MM/yyyy HH:mm')}</p>
       </div>
     </div>
   );

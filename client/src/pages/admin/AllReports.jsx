@@ -204,6 +204,12 @@ Please check your portal for details.
         )}
       </div>
 
+      <div className="hidden">
+        <div ref={printRef}>
+          {printData && <ReportPrint report={printData} appointment={printData.appointment} />}
+        </div>
+      </div>
+
       {total > 20 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-500">Showing {reports.length} of {total}</p>
@@ -214,13 +220,6 @@ Please check your portal for details.
           </div>
         </div>
       )}
-
-      {/* Hidden print */}
-      <div className="hidden">
-        <div ref={printRef}>
-          {printData && <ReportPrint report={printData} appointment={printData.appointment} />}
-        </div>
-      </div>
     </div>
   );
 }
