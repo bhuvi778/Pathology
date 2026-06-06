@@ -9,7 +9,6 @@ function getFlagDisplay(flag) {
 
 export default function ReportPrint({ report, appointment }) {
   const patient = report?.patient || appointment?.patient;
-  const doctor = report?.doctor || appointment?.doctor;
 
   const labSettings = JSON.parse(localStorage.getItem('labSettings') || '{}');
   const labDirector = labSettings.labDirector || 'Dr. Rajesh Kumar Sharma';
@@ -102,22 +101,6 @@ export default function ReportPrint({ report, appointment }) {
         <span><span style={{ color: '#7c3aed', fontWeight: 'bold' }}>C</span> = Critical</span>
       </div>
 
-      {/* Signature */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '32px' }}>
-        <div style={{ textAlign: 'center', minWidth: '200px' }}>
-          <div style={{ borderTop: '1px solid #374151', paddingTop: '8px' }}>
-            <p style={{ fontWeight: 'bold', fontSize: '12px' }}>{labDirector}</p>
-            <p style={{ fontSize: '10px', color: '#6b7280' }}>{labDirectorQual}</p>
-            <p style={{ fontSize: '10px', color: '#2563eb' }}>Lab Director / Pathologist</p>
-          </div>
-          {report?.verifiedBy && (
-            <div style={{ marginTop: '4px', fontSize: '10px', color: '#6b7280' }}>
-              <p>Verified by: {report.verifiedBy?.name}</p>
-              {report.verifiedAt && <p>{formatDate(report.verifiedAt, 'dd/MM/yyyy HH:mm')}</p>}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
