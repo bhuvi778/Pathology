@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, FileText, Printer, ExternalLink, PackageCheck } from 'lucide-react';
+import { Search, FileText, Printer, ExternalLink, PackageCheck, Phone } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import api from '../../utils/api';
@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
 import ReportPrint from '../../components/reports/ReportPrint';
 import toast from 'react-hot-toast';
+import { shareReportViaWhatsAppNumber } from '../../utils/whatsapp';
 
 export default function AllReports() {
   const [reports, setReports] = useState([]);
@@ -50,6 +51,30 @@ export default function AllReports() {
       setTimeout(handlePrint, 100);
     } catch {
       toast.error('Could not load report for printing');
+    }
+  };
+
+  const shareOnWhatsApp = (report) => {
+    const phoneNumber = report.patient?.phone;
+    if (phoneNumber) {
+      shareReportViaWhatsAppNumber(report, phoneNumber);
+      toast.success('WhatsApp opened! Message ready to send');
+    } else {
+      const message = `
+📋 *Report Generated* 📋
+
+👤 Patient: ${report.patient?.name}
+🆔 ID: ${report.patient?.patientId}
+🧪 Test: ${report.test?.name}
+📑 Report ID: ${report.reportId}
+📊 Status: ${report.status}
+
+Please check your portal for details.
+      `.trim();
+      const encoded = encodeURIComponent(message);
+      const whatsappLink = `https://wa.me/?text=${encoded}`;
+      window.open(whatsappLink, '_blank');
+      toast.success('WhatsApp opened! Share with patient');
     }
   };
 
@@ -121,7 +146,7 @@ export default function AllReports() {
                   <td className="table-td text-xs text-slate-400">{formatDate(r.reportDate)}</td>
                   <td className="table-td text-slate-500 text-sm">{r.enteredBy?.name || '—'}</td>
                   <td className="table-td">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-wrap">
                       {/* Open appointment to enter/view results */}
                       <button
                         onClick={() => navigate(`/doctor/results/${r.appointment?._id || r.appointment}`)}
@@ -138,6 +163,16 @@ export default function AllReports() {
                           className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 border border-slate-200"
                         >
                           <Printer className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {/* Share WhatsApp — only for verified/delivered reports */}
+                      {['verified', 'delivered'].includes(r.status) && (
+                        <button
+                          onClick={() => shareOnWhatsApp(r)}
+                          title="Share on WhatsApp"
+                          className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 border border-green-100"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
                         </button>
                       )}
                       {/* Mark Delivered — only for verified reports */}

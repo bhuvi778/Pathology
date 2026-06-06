@@ -10,29 +10,38 @@ export default function LabSettings() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Try loading from a settings endpoint or use defaults
-    setSettings({
-      labName: 'Shri Dhanvantari Pathology & Diagnostic Centre',
-      labAddress: '42, Nehru Nagar, Near District Hospital, Lucknow, Uttar Pradesh - 226001',
-      labPhone: '+91-522-2601234',
-      labEmail: 'info@dhanvantarilab.in',
-      labDirector: 'Dr. Rajesh Kumar Sharma',
-      labDirectorQualification: 'MBBS, MD (Pathology), NABL Accredited',
-      reportFooter: 'This report is electronically generated. For queries, contact: +91-522-2601234',
-      registrationNumber: 'UP-DL-2019-04521',
-    });
-    setLoading(false);
+    const loadSettings = async () => {
+      try {
+        const response = await api.get('/settings');
+        setSettings(response.data);
+      } catch (err) {
+        console.error('Error loading settings:', err);
+        // Fall back to default values
+        setSettings({
+          labName: 'Shri Dhanvantari Pathology & Diagnostic Centre',
+          labAddress: '42, Nehru Nagar, Near District Hospital, Lucknow, Uttar Pradesh - 226001',
+          labPhone: '+91-522-2601234',
+          labEmail: 'info@dhanvantarilab.in',
+          labDirector: 'Dr. Rajesh Kumar Sharma',
+          labDirectorQualification: 'MBBS, MD (Pathology), NABL Accredited',
+          reportFooter: 'This report is electronically generated. For queries, contact: +91-522-2601234',
+          registrationNumber: 'UP-DL-2019-04521',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSettings();
   }, []);
 
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      // Save to localStorage as backup
-      localStorage.setItem('labSettings', JSON.stringify(settings));
+      await api.put('/settings', settings);
       toast.success('Settings saved successfully!');
     } catch (err) {
-      toast.error('Error saving settings');
+      toast.error(err.response?.data?.message || 'Error saving settings');
     } finally {
       setSaving(false);
     }

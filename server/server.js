@@ -38,6 +38,7 @@ app.use('/api/bills', require('./routes/bills'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/settings', require('./routes/settings'));
 
 app.get('/', (req, res) => res.json({ message: 'Pathology Lab API Running' }));
 
