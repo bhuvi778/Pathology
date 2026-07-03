@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import api from '../../utils/api';
 import { formatDate } from '../../utils/helpers';
 
 function getFlagDisplay(flag) {
@@ -9,13 +11,38 @@ function getFlagDisplay(flag) {
 
 export default function ReportPrint({ report, appointment }) {
   const patient = report?.patient || appointment?.patient;
+  const [labSettings, setLabSettings] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('labSettings') || '{}');
+    } catch {
+      return {};
+    }
+  });
 
-  const labSettings = JSON.parse(localStorage.getItem('labSettings') || '{}');
+  useEffect(() => {
+    api.get('/settings').then((res) => {
+      setLabSettings(res.data);
+      localStorage.setItem('labSettings', JSON.stringify(res.data));
+    }).catch(() => {});
+  }, []);
+
   const labDirector = labSettings.labDirector || 'Dr. Rajesh Kumar Sharma';
   const labDirectorQual = labSettings.labDirectorQualification || 'MBBS, MCPS (Pathology)';
+  const includeHeader = labSettings.includeHeader !== false;
+  const includeFooter = labSettings.includeFooter !== false;
+  const reportLayout = labSettings.reportLayout || 'standard';
+  const padding = reportLayout === 'compact' ? 12 : 20;
+  const fontSize = reportLayout === 'compact' ? 11 : 12;
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000', padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, maxWidth: '800px', margin: '0 auto' }}>
+      {includeHeader && labSettings.reportHeader && (
+        <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+          <div style={{ fontSize: `${reportLayout === 'compact' ? 14 : 16}px`, fontWeight: '700', color: '#1f2937' }}>
+            {labSettings.reportHeader}
+          </div>
+        </div>
+      )}
 
       {/* Report Title */}
       <div style={{ textAlign: 'center', marginBottom: '16px' }}>
@@ -33,6 +60,10 @@ export default function ReportPrint({ report, appointment }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Patient ID:</span>
           <span>{patient?.patientId}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>IP Number:</span>
+          <span>{patient?.ipNumber || 'N/A'}</span>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Age/Gender:</span>
@@ -100,6 +131,19 @@ export default function ReportPrint({ report, appointment }) {
         <span><span style={{ color: '#2563eb', fontWeight: 'bold' }}>L</span> = Low</span>
         <span><span style={{ color: '#7c3aed', fontWeight: 'bold' }}>C</span> = Critical</span>
       </div>
+
+      {labSettings.doctorSignature && (
+        <div style={{ marginBottom: '18px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', color: '#374151', fontSize: `${fontSize}px` }}>Doctor Signature</p>
+          <img src={labSettings.doctorSignature} alt="Doctor Signature" style={{ maxHeight: '80px', objectFit: 'contain' }} />
+        </div>
+      )}
+
+      {includeFooter && labSettings.reportFooter && (
+        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px', color: '#475569', fontSize: `${fontSize - 1}px`, lineHeight: 1.5 }}>
+          {labSettings.reportFooter}
+        </div>
+      )}
 
     </div>
   );

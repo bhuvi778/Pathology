@@ -142,6 +142,10 @@ export default function PatientWorkflow() {
                     <p className="font-medium text-slate-800">{appointmentDetails.patient?.patientId}</p>
                   </div>
                   <div>
+                    <p className="text-sm text-slate-500">IP Number</p>
+                    <p className="font-medium text-slate-800">{appointmentDetails.patient?.ipNumber || 'N/A'}</p>
+                  </div>
+                  <div>
                     <p className="text-sm text-slate-500">Age / Gender</p>
                     <p className="font-medium text-slate-800">
                       {appointmentDetails.patient?.age}{appointmentDetails.patient?.ageUnit === 'years' ? 'y' : appointmentDetails.patient?.ageUnit === 'months' ? 'm' : 'd'} / {appointmentDetails.patient?.gender?.charAt(0).toUpperCase()}

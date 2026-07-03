@@ -39,6 +39,7 @@ export default function ViewReports() {
     return (
       report.patient?.name?.toLowerCase().includes(searchLower) ||
       report.patient?.patientId?.toLowerCase().includes(searchLower) ||
+      report.patient?.ipNumber?.toLowerCase().includes(searchLower) ||
       report.test?.name?.toLowerCase().includes(searchLower) ||
       report.reportId?.toLowerCase().includes(searchLower)
     );

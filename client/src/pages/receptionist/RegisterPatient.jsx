@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -10,17 +10,48 @@ export default function RegisterPatient() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '', age: '', ageUnit: 'years', gender: 'male', phone: '',
-    email: '', address: '', cnic: '', bloodGroup: 'Unknown', referredBy: '', medicalHistory: '',
+    email: '', address: '', cnic: '', ipNumber: '', bloodGroup: 'Unknown', referredBy: '', medicalHistory: '',
   });
+  const [tests, setTests] = useState([]);
+  const [selectedTests, setSelectedTests] = useState([]);
+  const [settings, setSettings] = useState({ autoIpNumber: true });
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    api.get('/tests').then(res => setTests(res.data)).catch(() => setTests([]));
+    api.get('/settings').then(res => setSettings(res.data)).catch(() => {});
+  }, []);
+
+  const toggleTest = (test) => {
+    setSelectedTests(prev => prev.find(t => t._id === test._id) ? prev.filter(t => t._id !== test._id) : [...prev, test]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const patient = await api.post('/patients', form);
+      if (settings.autoIpNumber === false && !form.ipNumber) {
+        toast.error('Please enter a valid IP Number or enable automatic IP generation in settings.');
+        setLoading(false);
+        return;
+      }
+      const patient = await api.post('/patients', { ...form, tests: selectedTests.map(t => t._id) });
       toast.success(`Patient registered! ID: ${patient.data.patientId}`);
-      navigate('/reception/new-appointment', { state: { patientId: patient.data._id, patient: patient.data } });
+      if (selectedTests.length > 0) {
+        await api.post('/appointments', {
+          patient: patient.data._id,
+          tests: selectedTests.map(t => t._id),
+          appointmentDate: new Date().toISOString().split('T')[0],
+          priority: 'normal',
+          referredBy: form.referredBy,
+          notes: 'Patient registered with tests from initial admission.',
+        });
+        toast.success('Appointment created and tests linked to the patient.');
+        navigate('/reception/appointments');
+      } else {
+        navigate('/reception/new-appointment', { state: { patientId: patient.data._id, patient: patient.data } });
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error registering patient');
     } finally {
@@ -76,11 +107,59 @@ export default function RegisterPatient() {
         <div className="grid grid-cols-2 gap-4">
           <div><label className="label">CNIC (Optional)</label><input value={form.cnic} onChange={e => setForm(f => ({ ...f, cnic: e.target.value }))} className="input-field" placeholder="XXXXX-XXXXXXX-X" /></div>
           <div>
-            <label className="label">Blood Group</label>
-            <select value={form.bloodGroup} onChange={e => setForm(f => ({ ...f, bloodGroup: e.target.value }))} className="input-field">
-              {bloodGroups.map(bg => <option key={bg} value={bg}>{bg}</option>)}
-            </select>
+            <label className="label">IP Number</label>
+            <input
+              disabled={settings.autoIpNumber}
+              value={form.ipNumber}
+              onChange={e => setForm(f => ({ ...f, ipNumber: e.target.value }))}
+              className="input-field"
+              placeholder={settings.autoIpNumber ? 'Auto-generated after save' : 'Enter IP number'}
+            />
+            {!settings.autoIpNumber && <p className="text-xs text-slate-500 mt-1">IP number must be unique.</p>}
+            {settings.autoIpNumber && <p className="text-xs text-slate-500 mt-1">Auto-IP mode is enabled in Lab Settings.</p>}
           </div>
+        </div>
+
+        <div>
+          <label className="label">Blood Group</label>
+          <select value={form.bloodGroup} onChange={e => setForm(f => ({ ...f, bloodGroup: e.target.value }))} className="input-field">
+            {bloodGroups.map(bg => <option key={bg} value={bg}>{bg}</option>)}
+          </select>
+        </div>
+
+        <div><label className="label">Selected Tests</label>
+          <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50">
+            {tests.length === 0 ? (
+              <p className="text-sm text-slate-500">Loading available tests...</p>
+            ) : (
+              tests.slice(0, 10).map(test => {
+                const selected = selectedTests.some(t => t._id === test._id);
+                return (
+                  <button
+                    key={test._id}
+                    type="button"
+                    onClick={() => toggleTest(test)}
+                    className={`w-full text-left px-3 py-2 rounded-xl border ${selected ? 'border-primary-500 bg-primary-50' : 'border-slate-200 bg-white'} transition`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-slate-800">{test.name}</p>
+                        <p className="text-xs text-slate-500">{test.shortName}</p>
+                      </div>
+                      <span className={`text-xs font-semibold ${selected ? 'text-primary-700' : 'text-slate-600'}`}>
+                        {selected ? 'Selected' : `₹${test.price}`}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+          {selectedTests.length > 0 && (
+            <div className="mt-2 text-sm text-slate-600">
+              {selectedTests.length} selected tests: {selectedTests.map(t => t.name).join(', ')}
+            </div>
+          )}
         </div>
 
         <div><label className="label">Address</label><textarea value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="input-field" rows={2} placeholder="Patient's address" /></div>

@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const emptyEdit = { name: '', phone: '', age: '', ageUnit: 'years', gender: 'male', bloodGroup: '', address: '', referredBy: '', cnic: '', email: '', medicalHistory: '' };
+const emptyEdit = { name: '', phone: '', age: '', ageUnit: 'years', gender: 'male', bloodGroup: '', ipNumber: '', address: '', referredBy: '', cnic: '', email: '', medicalHistory: '' };
 const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
 
 export default function AllPatients() {
@@ -114,6 +114,7 @@ export default function AllPatients() {
             <thead>
               <tr>
                 <th className="table-th">Patient ID</th>
+                <th className="table-th">IP Number</th>
                 <th className="table-th">Name</th>
                 <th className="table-th">Age / Gender</th>
                 <th className="table-th">Phone</th>
@@ -130,6 +131,7 @@ export default function AllPatients() {
               {patients.map(p => (
                 <tr key={p._id} className="hover:bg-slate-50">
                   <td className="table-td"><span className="font-mono text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">{p.patientId}</span></td>
+                  <td className="table-td"><span className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">{p.ipNumber || '—'}</span></td>
                   <td className="table-td">
                     <p className="font-medium text-slate-800">{p.name}</p>
                   </td>
@@ -216,6 +218,9 @@ export default function AllPatients() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="label">CNIC (Optional)</label><input value={editForm.cnic} onChange={e => setEditForm(f => ({ ...f, cnic: e.target.value }))} className="input-field" placeholder="XXXXX-XXXXXXX-X" /></div>
+            <div><label className="label">IP Number</label><input value={editForm.ipNumber || ''} onChange={e => setEditForm(f => ({ ...f, ipNumber: e.target.value }))} className="input-field" placeholder="Optional IP number" /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Blood Group</label>
               <select value={editForm.bloodGroup} onChange={e => setEditForm(f => ({ ...f, bloodGroup: e.target.value }))} className="input-field">

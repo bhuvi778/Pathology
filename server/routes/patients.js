@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Patient = require('../models/Patient');
+const LabSettings = require('../models/LabSettings');
+const Counter = require('../models/Counter');
 const { protect, authorize } = require('../middleware/auth');
 
 // GET /api/patients
@@ -12,6 +14,7 @@ router.get('/', protect, async (req, res) => {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { patientId: { $regex: search, $options: 'i' } },
+        { ipNumber: { $regex: search, $options: 'i' } },
         { phone: { $regex: search, $options: 'i' } },
         { cnic: { $regex: search, $options: 'i' } },
       ];
@@ -19,6 +22,7 @@ router.get('/', protect, async (req, res) => {
     const total = await Patient.countDocuments(query);
     const patients = await Patient.find(query)
       .populate('registeredBy', 'name')
+      .populate('tests', 'name shortName category')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
@@ -31,7 +35,9 @@ router.get('/', protect, async (req, res) => {
 // GET /api/patients/:id
 router.get('/:id', protect, async (req, res) => {
   try {
-    const patient = await Patient.findById(req.params.id).populate('registeredBy', 'name');
+    const patient = await Patient.findById(req.params.id)
+      .populate('registeredBy', 'name')
+      .populate('tests', 'name shortName category');
     if (!patient) return res.status(404).json({ message: 'Patient not found' });
     res.json(patient);
   } catch (error) {
@@ -42,7 +48,32 @@ router.get('/:id', protect, async (req, res) => {
 // POST /api/patients
 router.post('/', protect, async (req, res) => {
   try {
-    const patient = new Patient({ ...req.body, registeredBy: req.user._id });
+    const { name, age, gender, phone, cnic, ipNumber, tests } = req.body;
+    if (!name || age === undefined || !gender || !phone) {
+      return res.status(400).json({ message: 'Required fields missing: name, age, gender, phone' });
+    }
+
+    const duplicateQuery = [{ phone }];
+    if (cnic) duplicateQuery.push({ cnic });
+    if (ipNumber) duplicateQuery.push({ ipNumber });
+
+    const duplicate = await Patient.findOne({ $or: duplicateQuery });
+    if (duplicate) {
+      return res.status(409).json({ message: 'Duplicate patient record or IP number already exists' });
+    }
+
+    const settings = await LabSettings.findOne();
+    let finalIpNumber = ipNumber;
+    if (!finalIpNumber && (settings?.autoIpNumber !== false)) {
+      const counter = await Counter.findByIdAndUpdate(
+        { _id: 'ipNumber' },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      finalIpNumber = `IP-${String(counter.seq).padStart(5, '0')}`;
+    }
+
+    const patient = new Patient({ ...req.body, ipNumber: finalIpNumber, registeredBy: req.user._id, tests });
     await patient.save();
     res.status(201).json(patient);
   } catch (error) {
@@ -54,6 +85,10 @@ router.post('/', protect, async (req, res) => {
 // PUT /api/patients/:id
 router.put('/:id', protect, async (req, res) => {
   try {
+    if (req.body.ipNumber) {
+      const duplicate = await Patient.findOne({ ipNumber: req.body.ipNumber, _id: { $ne: req.params.id } });
+      if (duplicate) return res.status(409).json({ message: 'IP number already used by another patient' });
+    }
     const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!patient) return res.status(404).json({ message: 'Patient not found' });
     res.json(patient);
