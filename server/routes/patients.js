@@ -73,11 +73,14 @@ router.post('/', protect, async (req, res) => {
       finalIpNumber = `IP-${String(counter.seq).padStart(5, '0')}`;
     }
 
-    const patient = new Patient({ ...req.body, ipNumber: finalIpNumber, registeredBy: req.user._id, tests });
+    const testsArray = Array.isArray(tests) ? tests : tests ? [tests] : [];
+    const patient = new Patient({ ...req.body, ipNumber: finalIpNumber, registeredBy: req.user._id, tests: testsArray });
     await patient.save();
     res.status(201).json(patient);
   } catch (error) {
-    if (error.code === 11000) return res.status(400).json({ message: 'Duplicate entry' });
+    console.error('Patient create error:', error);
+    if (error.code === 11000) return res.status(400).json({ message: 'Duplicate entry', error: error.message });
+    if (error.name === 'ValidationError') return res.status(400).json({ message: 'Validation failed', error: error.message });
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
