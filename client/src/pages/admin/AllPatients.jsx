@@ -22,6 +22,9 @@ export default function AllPatients() {
   const [editId, setEditId] = useState(null);
   const [isNewPatient, setIsNewPatient] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [tests, setTests] = useState([]);
+  const [selectedTests, setSelectedTests] = useState([]);
+  const [settings, setSettings] = useState({ autoIpNumber: true });
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -33,7 +36,11 @@ export default function AllPatients() {
     }).catch(console.error).finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(search, page); }, [page]);
+  useEffect(() => {
+    load(search, page);
+    api.get('/tests').then(r => setTests(r.data)).catch(() => setTests([]));
+    api.get('/settings').then(r => setSettings(r.data)).catch(() => {});
+  }, [page]);
 
   const handleSearch = (e) => {
     setSearch(e.target.value);
@@ -50,6 +57,7 @@ export default function AllPatients() {
       bloodGroup: p.bloodGroup || '', address: p.address || '', referredBy: p.referredBy || '',
       cnic: p.cnic || '', email: p.email || '', medicalHistory: p.medicalHistory || '',
     });
+    setSelectedTests([]);
     setEditModal(true);
   };
 
@@ -57,15 +65,28 @@ export default function AllPatients() {
     setIsNewPatient(true);
     setEditId(null);
     setEditForm(emptyEdit);
+    setSelectedTests([]);
     setEditModal(true);
+  };
+
+  const toggleTest = (test) => {
+    setSelectedTests(prev => prev.find(t => t._id === test._id)
+      ? prev.filter(t => t._id !== test._id)
+      : [...prev, test]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
+      if (isNewPatient && settings.autoIpNumber === false && !editForm.ipNumber) {
+        toast.error('Please enter a unique IP Number or enable auto IP generation in lab settings.');
+        setSaving(false);
+        return;
+      }
+
       if (isNewPatient) {
-        const patient = await api.post('/patients', editForm);
+        const patient = await api.post('/patients', { ...editForm, tests: selectedTests.map(t => t._id) });
         toast.success(`Patient registered! ID: ${patient.data.patientId}`);
       } else {
         await api.put(`/patients/${editId}`, editForm);
@@ -228,6 +249,43 @@ export default function AllPatients() {
               </select>
             </div>
           </div>
+          {isNewPatient && (
+            <div>
+              <label className="label">Select Tests</label>
+              <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50">
+                {tests.length === 0 ? (
+                  <p className="text-sm text-slate-500">Loading available tests...</p>
+                ) : (
+                  tests.slice(0, 10).map(test => {
+                    const selected = selectedTests.some(t => t._id === test._id);
+                    return (
+                      <button
+                        key={test._id}
+                        type="button"
+                        onClick={() => toggleTest(test)}
+                        className={`w-full text-left px-3 py-2 rounded-xl border ${selected ? 'border-primary-500 bg-primary-50' : 'border-slate-200 bg-white'} transition`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-medium text-slate-800">{test.name}</p>
+                            <p className="text-xs text-slate-500">{test.shortName}</p>
+                          </div>
+                          <span className={`text-xs font-semibold ${selected ? 'text-primary-700' : 'text-slate-600'}`}>
+                            {selected ? 'Selected' : `₹${test.price}`}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+              {selectedTests.length > 0 && (
+                <div className="mt-2 text-sm text-slate-600">
+                  {selectedTests.length} selected tests: {selectedTests.map(t => t.name).join(', ')}
+                </div>
+              )}
+            </div>
+          )}
           <div><label className="label">Address</label><input value={editForm.address} onChange={e => setEditForm(f => ({ ...f, address: e.target.value }))} className="input-field" placeholder="Patient's address" /></div>
           <div><label className="label">Referred By (Doctor/Hospital)</label><input value={editForm.referredBy} onChange={e => setEditForm(f => ({ ...f, referredBy: e.target.value }))} className="input-field" placeholder="Dr. Name / Hospital name" /></div>
           {isNewPatient && <div><label className="label">Medical History / Notes</label><textarea value={editForm.medicalHistory} onChange={e => setEditForm(f => ({ ...f, medicalHistory: e.target.value }))} className="input-field" rows={2} placeholder="Any relevant medical history..." /></div>}
