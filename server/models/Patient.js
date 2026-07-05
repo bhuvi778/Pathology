@@ -3,11 +3,11 @@ const Counter = require('./Counter');
 
 const patientSchema = new mongoose.Schema({
   patientId: { type: String, unique: true },
-  name: { type: String, required: true, trim: true },
-  age: { type: Number, required: true },
+  name: { type: String, trim: true },
+  age: { type: Number },
   ageUnit: { type: String, enum: ['years', 'months', 'days'], default: 'years' },
-  gender: { type: String, enum: ['male', 'female', 'other'], required: true },
-  phone: { type: String, required: true },
+  gender: { type: String, enum: ['male', 'female', 'other'] },
+  phone: { type: String },
   email: { type: String, lowercase: true },
   address: { type: String },
   cnic: { type: String },

@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const emptyEdit = { name: '', phone: '', age: '', ageUnit: 'years', gender: 'male', bloodGroup: '', ipNumber: '', address: '', referredBy: '', cnic: '', email: '', medicalHistory: '' };
+const emptyEdit = { name: '', phone: '', age: '', ageUnit: 'years', gender: '', bloodGroup: '', ipNumber: '', address: '', referredBy: '', cnic: '', email: '', medicalHistory: '' };
 const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
 
 export default function AllPatients() {
@@ -24,6 +24,7 @@ export default function AllPatients() {
   const [saving, setSaving] = useState(false);
   const [tests, setTests] = useState([]);
   const [selectedTests, setSelectedTests] = useState([]);
+  const [testSearch, setTestSearch] = useState('');
   const [settings, setSettings] = useState({ autoIpNumber: true });
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -53,7 +54,7 @@ export default function AllPatients() {
     setEditId(p._id);
     setEditForm({
       name: p.name || '', phone: p.phone || '', age: p.age || '',
-      ageUnit: p.ageUnit || 'years', gender: p.gender || 'male',
+      ageUnit: p.ageUnit || 'years', gender: p.gender || '',
       bloodGroup: p.bloodGroup || '', address: p.address || '', referredBy: p.referredBy || '',
       cnic: p.cnic || '', email: p.email || '', medicalHistory: p.medicalHistory || '',
     });
@@ -79,12 +80,6 @@ export default function AllPatients() {
     e.preventDefault();
     setSaving(true);
     try {
-      if (isNewPatient && settings.autoIpNumber === false && !editForm.ipNumber) {
-        toast.error('Please enter a unique IP Number or enable auto IP generation in lab settings.');
-        setSaving(false);
-        return;
-      }
-
       if (isNewPatient) {
         const patient = await api.post('/patients', { ...editForm, tests: selectedTests.map(t => t._id) });
         toast.success(`Patient registered! ID: ${patient.data.patientId}`);
@@ -140,6 +135,7 @@ export default function AllPatients() {
                 <th className="table-th">Age / Gender</th>
                 <th className="table-th">Phone</th>
                 <th className="table-th">Blood Group</th>
+                <th className="table-th">Tests</th>
                 <th className="table-th">Referred By</th>
                 <th className="table-th">Registered</th>
                 <th className="table-th">Actions</th>
@@ -147,7 +143,7 @@ export default function AllPatients() {
             </thead>
             <tbody>
               {patients.length === 0 && (
-                <tr><td colSpan="8" className="text-center py-12 text-slate-400">No patients found</td></tr>
+                <tr><td colSpan="9" className="text-center py-12 text-slate-400">No patients found</td></tr>
               )}
               {patients.map(p => (
                 <tr key={p._id} className="hover:bg-slate-50">
@@ -161,6 +157,16 @@ export default function AllPatients() {
                   <td className="table-td">
                     {p.bloodGroup && p.bloodGroup !== 'Unknown' ? (
                       <span className="bg-red-50 text-red-700 text-xs px-2 py-1 rounded font-bold">{p.bloodGroup}</span>
+                    ) : <span className="text-slate-300">—</span>}
+                  </td>
+                  <td className="table-td text-sm text-slate-600">
+                    {p.tests?.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {p.tests.slice(0, 2).map(test => (
+                          <span key={test._id} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{test.shortName || test.name}</span>
+                        ))}
+                        {p.tests.length > 2 && <span className="text-xs text-slate-400">+{p.tests.length - 2}</span>}
+                      </div>
                     ) : <span className="text-slate-300">—</span>}
                   </td>
                   <td className="table-td text-slate-500 text-sm">{p.referredBy || '—'}</td>
@@ -214,12 +220,12 @@ export default function AllPatients() {
       <Modal open={editModal} onClose={() => setEditModal(false)} title={isNewPatient ? 'Register New Patient' : 'Edit Patient Details'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="label">Full Name *</label><input required value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="input-field" placeholder="Patient full name" /></div>
-            <div><label className="label">Phone *</label><input required value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} className="input-field" placeholder="+91-XXXXX-XXXXX" /></div>
+            <div><label className="label">Full Name</label><input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="input-field" placeholder="Patient full name" /></div>
+            <div><label className="label">Phone</label><input value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} className="input-field" placeholder="+91-XXXXX-XXXXX" /></div>
           </div>
           <div><label className="label">Email (Optional)</label><input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="input-field" placeholder="email@example.com" /></div>
           <div className="grid grid-cols-3 gap-4">
-            <div><label className="label">Age *</label><input required type="number" min="0" max="150" value={editForm.age} onChange={e => setEditForm(f => ({ ...f, age: e.target.value }))} className="input-field" /></div>
+            <div><label className="label">Age</label><input type="number" min="0" max="150" value={editForm.age} onChange={e => setEditForm(f => ({ ...f, age: e.target.value }))} className="input-field" /></div>
             <div>
               <label className="label">Age Unit</label>
               <select value={editForm.ageUnit} onChange={e => setEditForm(f => ({ ...f, ageUnit: e.target.value }))} className="input-field">
@@ -229,8 +235,9 @@ export default function AllPatients() {
               </select>
             </div>
             <div>
-              <label className="label">Gender *</label>
-              <select required value={editForm.gender} onChange={e => setEditForm(f => ({ ...f, gender: e.target.value }))} className="input-field">
+              <label className="label">Gender</label>
+              <select value={editForm.gender} onChange={e => setEditForm(f => ({ ...f, gender: e.target.value }))} className="input-field">
+                <option value="">Select</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
                 <option value="other">Other</option>
@@ -245,6 +252,7 @@ export default function AllPatients() {
             <div>
               <label className="label">Blood Group</label>
               <select value={editForm.bloodGroup} onChange={e => setEditForm(f => ({ ...f, bloodGroup: e.target.value }))} className="input-field">
+                <option value="">Select</option>
                 {bloodGroups.map(bg => <option key={bg} value={bg}>{bg}</option>)}
               </select>
             </div>
@@ -252,11 +260,15 @@ export default function AllPatients() {
           {isNewPatient && (
             <div>
               <label className="label">Select Tests</label>
+              <input value={testSearch} onChange={e => setTestSearch(e.target.value)} className="input-field mb-3" placeholder="Search tests..." />
               <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50">
                 {tests.length === 0 ? (
                   <p className="text-sm text-slate-500">Loading available tests...</p>
                 ) : (
-                  tests.slice(0, 10).map(test => {
+                  tests.filter(test => {
+                    const q = testSearch.toLowerCase();
+                    return !q || test.name?.toLowerCase().includes(q) || test.shortName?.toLowerCase().includes(q) || test.category?.toLowerCase().includes(q);
+                  }).map(test => {
                     const selected = selectedTests.some(t => t._id === test._id);
                     return (
                       <button

@@ -48,18 +48,17 @@ router.get('/:id', protect, async (req, res) => {
 // POST /api/patients
 router.post('/', protect, async (req, res) => {
   try {
-    const { name, age, gender, phone, cnic, ipNumber, tests } = req.body;
-    if (!name || age === undefined || !gender || !phone) {
-      return res.status(400).json({ message: 'Required fields missing: name, age, gender, phone' });
-    }
-
-    const duplicateQuery = [{ phone }];
+    const { cnic, ipNumber, tests } = req.body;
+    const duplicateQuery = [];
+    if (req.body.phone) duplicateQuery.push({ phone: req.body.phone });
     if (cnic) duplicateQuery.push({ cnic });
     if (ipNumber) duplicateQuery.push({ ipNumber });
 
-    const duplicate = await Patient.findOne({ $or: duplicateQuery });
-    if (duplicate) {
-      return res.status(409).json({ message: 'Duplicate patient record or IP number already exists' });
+    if (duplicateQuery.length > 0) {
+      const duplicate = await Patient.findOne({ $or: duplicateQuery });
+      if (duplicate) {
+        return res.status(409).json({ message: 'Duplicate patient record or IP number already exists' });
+      }
     }
 
     const settings = await LabSettings.findOne();
@@ -73,8 +72,22 @@ router.post('/', protect, async (req, res) => {
       finalIpNumber = `IP-${String(counter.seq).padStart(5, '0')}`;
     }
 
+    const patientData = { ...req.body };
+    ['name', 'phone', 'email', 'address', 'cnic', 'referredBy', 'medicalHistory', 'bloodGroup', 'ipNumber'].forEach((field) => {
+      if (patientData[field] === '' || patientData[field] === undefined || patientData[field] === null) delete patientData[field];
+    });
+    if (patientData.age === '' || patientData.age === undefined || patientData.age === null) delete patientData.age;
+    if (patientData.gender === '' || patientData.gender === undefined || patientData.gender === null) delete patientData.gender;
+
     const testsArray = Array.isArray(tests) ? tests : tests ? [tests] : [];
-    const patient = new Patient({ ...req.body, ipNumber: finalIpNumber, registeredBy: req.user._id, tests: testsArray });
+    const patientPayload = {
+      ...patientData,
+      registeredBy: req.user._id,
+      tests: testsArray,
+    };
+    if (finalIpNumber) patientPayload.ipNumber = finalIpNumber;
+
+    const patient = new Patient(patientPayload);
     await patient.save();
     res.status(201).json(patient);
   } catch (error) {
