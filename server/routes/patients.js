@@ -50,14 +50,13 @@ router.post('/', protect, async (req, res) => {
   try {
     const { cnic, ipNumber, tests } = req.body;
     const duplicateQuery = [];
-    if (req.body.phone) duplicateQuery.push({ phone: req.body.phone });
     if (cnic) duplicateQuery.push({ cnic });
     if (ipNumber) duplicateQuery.push({ ipNumber });
 
     if (duplicateQuery.length > 0) {
       const duplicate = await Patient.findOne({ $or: duplicateQuery });
       if (duplicate) {
-        return res.status(409).json({ message: 'Duplicate patient record or IP number already exists' });
+        return res.status(409).json({ message: 'A patient with the same IP number or CNIC already exists' });
       }
     }
 
@@ -101,9 +100,13 @@ router.post('/', protect, async (req, res) => {
 // PUT /api/patients/:id
 router.put('/:id', protect, async (req, res) => {
   try {
-    if (req.body.ipNumber) {
-      const duplicate = await Patient.findOne({ ipNumber: req.body.ipNumber, _id: { $ne: req.params.id } });
-      if (duplicate) return res.status(409).json({ message: 'IP number already used by another patient' });
+    const duplicateQuery = [];
+    if (req.body.ipNumber) duplicateQuery.push({ ipNumber: req.body.ipNumber });
+    if (req.body.cnic) duplicateQuery.push({ cnic: req.body.cnic });
+
+    if (duplicateQuery.length > 0) {
+      const duplicate = await Patient.findOne({ $or: duplicateQuery, _id: { $ne: req.params.id } });
+      if (duplicate) return res.status(409).json({ message: 'A patient with the same IP number or CNIC already exists' });
     }
     const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!patient) return res.status(404).json({ message: 'Patient not found' });
