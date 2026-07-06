@@ -35,7 +35,7 @@ export default function ReportPrint({ report, appointment }) {
   const fontSize = reportLayout === 'compact' ? 11 : 12;
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: '113px', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: '160px', maxWidth: '800px', margin: '0 auto' }}>
       {includeHeader && labSettings.reportHeader && (
         <div style={{ marginBottom: '16px', textAlign: 'center' }}>
           <div style={{ fontSize: `${reportLayout === 'compact' ? 14 : 16}px`, fontWeight: '700', color: '#1f2937' }}>
@@ -117,17 +117,6 @@ export default function ReportPrint({ report, appointment }) {
           <p style={{ color: '#374151' }}>{report.remarks}</p>
         </div>
       )}
-
-      <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
-        <div style={{ width: '220px', textAlign: 'center' }}>
-          <div style={{ minHeight: '70px', borderTop: '1px solid #111827', marginBottom: '6px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-            {labSettings.doctorSignature ? (
-              <img src={labSettings.doctorSignature} alt="Doctor Signature" style={{ maxHeight: '60px', objectFit: 'contain' }} />
-            ) : null}
-          </div>
-          <p style={{ margin: 0, fontWeight: 'bold', color: '#374151', fontSize: `${fontSize}px` }}>Signature</p>
-        </div>
-      </div>
 
       {includeFooter && labSettings.reportFooter && (
         <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px', color: '#475569', fontSize: `${fontSize - 1}px`, lineHeight: 1.5 }}>

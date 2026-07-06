@@ -111,6 +111,10 @@ Please check your portal for details.
         </select>
       </div>
 
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        Admin can fill results, verify reports, and manage delivery from this section.
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
         {loading ? <LoadingSpinner /> : (
           <table className="w-full">
@@ -157,10 +161,10 @@ Please check your portal for details.
                           <FileText className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      {/* Open appointment to enter/view results */}
+                      {/* Open admin report entry workflow */}
                       <button
-                        onClick={() => navigate(`/doctor/results/${r.appointment?._id || r.appointment}`)}
-                        title="Open / Enter Results"
+                        onClick={() => navigate(`/admin/fill-report/${r.appointment?._id || r.appointment}`)}
+                        title="Open Admin Report Entry"
                         className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 border border-blue-100"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
