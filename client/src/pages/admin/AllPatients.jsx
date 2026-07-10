@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, UserPlus, Edit, ClipboardList, Trash2 } from 'lucide-react';
+import { Search, UserPlus, Edit, ClipboardList, Trash2, FileText } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Modal from '../../components/common/Modal';
 import api from '../../utils/api';
@@ -43,6 +43,12 @@ export default function AllPatients() {
     api.get('/settings').then(r => setSettings(r.data)).catch(() => {});
   }, [page]);
 
+  useEffect(() => {
+    if (editModal && isNewPatient && tests.length === 0) {
+      api.get('/tests').then(r => setTests(r.data)).catch(() => setTests([]));
+    }
+  }, [editModal, isNewPatient, tests.length]);
+
   const handleSearch = (e) => {
     setSearch(e.target.value);
     setPage(1);
@@ -67,7 +73,22 @@ export default function AllPatients() {
     setEditId(null);
     setEditForm(emptyEdit);
     setSelectedTests([]);
+    setTestSearch('');
     setEditModal(true);
+  };
+
+  const openReportReading = async (patient) => {
+    try {
+      const res = await api.get(`/appointments?search=${encodeURIComponent(patient.patientId || patient.name)}&limit=5&page=1`);
+      const appointment = res.data.appointments?.find(appt => appt.patient?._id === patient._id || appt.patient?.patientId === patient.patientId) || res.data.appointments?.[0];
+      if (appointment?._id) {
+        navigate(`/admin/fill-report/${appointment._id}`);
+      } else {
+        toast.error('No appointment found for this patient');
+      }
+    } catch (err) {
+      toast.error('Could not open report reading');
+    }
   };
 
   const toggleTest = (test) => {
@@ -189,6 +210,15 @@ export default function AllPatients() {
                       </button>
                       {user?.role === 'admin' && (
                         <button
+                          onClick={() => openReportReading(p)}
+                          title="Fill Report Reading"
+                          className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-600 border border-purple-100"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {user?.role === 'admin' && (
+                        <button
                           onClick={() => handleDelete(p)}
                           title="Delete Patient"
                           className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 border border-red-100"
@@ -260,6 +290,7 @@ export default function AllPatients() {
           {isNewPatient && (
             <div>
               <label className="label">Select Tests</label>
+              <p className="text-xs text-slate-500 mb-2">Choose tests to attach while registering the patient.</p>
               <input value={testSearch} onChange={e => setTestSearch(e.target.value)} className="input-field mb-3" placeholder="Search tests..." />
               <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50">
                 {tests.length === 0 ? (
