@@ -36,9 +36,9 @@ export default function FillReportReading() {
       ]);
       setAppointment(aptRes.data);
       setSelectedStatus(aptRes.data.status || 'pending');
-      setReports(rptRes.data.map(r => ({
+      setReports((rptRes.data || []).map(r => ({
         ...r,
-        results: r.results.map(res => ({ ...res })),
+        results: (r.results || []).map(res => ({ ...res })),
         remarksInput: r.remarks || '',
       })));
     } catch (err) {
@@ -90,7 +90,7 @@ export default function FillReportReading() {
         status: newStatus,
       });
       toast.success(action === 'verify' ? 'Report verified!' : 'Results saved!');
-      load();
+      await load();
     } catch (err) {
       toast.error('Error saving report');
     } finally {

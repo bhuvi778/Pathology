@@ -9,9 +9,12 @@ const { protect, authorize } = require('../middleware/auth');
 
 router.get('/', protect, async (req, res) => {
   try {
-    const { date, status, page = 1, limit = 20, search, doctorId } = req.query;
+    const { date, status, page = 1, limit = 20, search, doctorId, patientId, patient } = req.query;
     const query = {};
     if (status) query.status = status;
+    if (patientId || patient) {
+      query.patient = patientId || patient;
+    }
     if (doctorId) {
       query.doctor = doctorId;
     } else if (req.user.role === 'doctor' && req.user.doctorProfile) {

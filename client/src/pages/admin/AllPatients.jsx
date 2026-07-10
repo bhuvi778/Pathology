@@ -79,13 +79,24 @@ export default function AllPatients() {
 
   const openReportReading = async (patient) => {
     try {
-      const res = await api.get(`/appointments?search=${encodeURIComponent(patient.patientId || patient.name)}&limit=5&page=1`);
-      const appointment = res.data.appointments?.find(appt => appt.patient?._id === patient._id || appt.patient?.patientId === patient.patientId) || res.data.appointments?.[0];
+      const [appointmentRes, reportRes] = await Promise.all([
+        api.get(`/appointments?patientId=${encodeURIComponent(patient._id)}&limit=20&page=1`),
+        api.get(`/reports?patient=${encodeURIComponent(patient._id)}&limit=20&page=1`),
+      ]);
+
+      const appointment = appointmentRes.data.appointments?.find(appt => appt.patient?._id === patient._id || appt.patient?.patientId === patient.patientId) || appointmentRes.data.appointments?.[0];
       if (appointment?._id) {
         navigate(`/admin/fill-report/${appointment._id}`);
-      } else {
-        toast.error('No appointment found for this patient');
+        return;
       }
+
+      const reportAppointmentId = reportRes.data.reports?.find(report => report.appointment?._id || report.appointment)?.appointment?._id || reportRes.data.reports?.[0]?.appointment?._id || reportRes.data.reports?.[0]?.appointment;
+      if (reportAppointmentId) {
+        navigate(`/admin/fill-report/${reportAppointmentId}`);
+        return;
+      }
+
+      toast.error('No appointment found for this patient');
     } catch (err) {
       toast.error('Could not open report reading');
     }
