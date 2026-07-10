@@ -79,26 +79,46 @@ export default function AllPatients() {
 
   const openReportReading = async (patient) => {
     try {
-      const [appointmentRes, reportRes] = await Promise.all([
-        api.get(`/appointments?patientId=${encodeURIComponent(patient._id)}&limit=20&page=1`),
-        api.get(`/reports?patient=${encodeURIComponent(patient._id)}&limit=20&page=1`),
-      ]);
+      const testIds = (patient.tests || [])
+        .map(test => (typeof test === 'string' ? test : test?._id))
+        .filter(Boolean);
 
-      const appointment = appointmentRes.data.appointments?.find(appt => appt.patient?._id === patient._id || appt.patient?.patientId === patient.patientId) || appointmentRes.data.appointments?.[0];
-      if (appointment?._id) {
-        navigate(`/admin/fill-report/${appointment._id}`);
+      if (testIds.length === 0) {
+        toast.error('This patient has no tests assigned for report entry');
         return;
       }
 
-      const reportAppointmentId = reportRes.data.reports?.find(report => report.appointment?._id || report.appointment)?.appointment?._id || reportRes.data.reports?.[0]?.appointment?._id || reportRes.data.reports?.[0]?.appointment;
-      if (reportAppointmentId) {
-        navigate(`/admin/fill-report/${reportAppointmentId}`);
+      const appointmentRes = await api.get(`/appointments?patientId=${encodeURIComponent(patient._id)}&limit=20&page=1`);
+      const existingAppointment = appointmentRes.data.appointments?.find(appt => appt.patient?._id === patient._id || appt.patient?.patientId === patient.patientId) || appointmentRes.data.appointments?.[0];
+
+      if (existingAppointment?._id) {
+        navigate(`/admin/fill-report/${existingAppointment._id}`);
         return;
       }
 
-      toast.error('No appointment found for this patient');
+      const createdAppointment = await api.post('/appointments', {
+        patient: patient._id,
+        appointmentDate: new Date().toISOString(),
+        status: 'pending',
+        tests: testIds,
+      });
+
+      if (createdAppointment?.data?._id) {
+        navigate(`/admin/fill-report/${createdAppointment.data._id}`);
+        return;
+      }
+
+      toast.error('Could not create report entry for this patient');
     } catch (err) {
-      toast.error('Could not open report reading');
+      if (err.response?.status === 409) {
+        const fallbackRes = await api.get(`/appointments?patientId=${encodeURIComponent(patient._id)}&limit=20&page=1`);
+        const fallbackAppointment = fallbackRes.data.appointments?.find(appt => appt.patient?._id === patient._id || appt.patient?.patientId === patient.patientId) || fallbackRes.data.appointments?.[0];
+        if (fallbackAppointment?._id) {
+          navigate(`/admin/fill-report/${fallbackAppointment._id}`);
+          return;
+        }
+      }
+      toast.error(err.response?.data?.message || 'Could not open report reading');
     }
   };
 
