@@ -54,12 +54,26 @@ export default function EnterResults() {
     setReports(prev => {
       const updated = [...prev];
       const result = { ...updated[reportIdx].results[resultIdx], value };
-      // Auto-calculate flag
+      
+      // Get parameter info from test
       const report = updated[reportIdx];
       const param = report.test?.parameters?.find(p => p.name === result.parameterName);
-      if (param && result.type !== 'text' && result.type !== 'options') {
-        result.flag = calculateFlag(value, param.normalRange, appointment?.patient?.gender);
+      
+      // Update result fields from parameter
+      if (param) {
+        result.unit = param.unit || result.unit;
+        result.type = param.type;
+        // Use general normal range as default
+        result.normalRange = param.normalRange?.general?.text || result.normalRange;
       }
+      
+      // Auto-calculate flag for numeric types
+      if (param && param.type === 'numeric' && value) {
+        result.flag = calculateFlag(value, param.normalRange, appointment?.patient?.gender);
+      } else {
+        result.flag = '';
+      }
+      
       updated[reportIdx].results[resultIdx] = result;
       return updated;
     });

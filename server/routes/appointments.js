@@ -6,6 +6,7 @@ const Test = require('../models/Test');
 const Report = require('../models/Report');
 const User = require('../models/User');
 const { protect, authorize } = require('../middleware/auth');
+const { buildReportResults } = require('../utils/reportResults');
 
 router.get('/', protect, async (req, res) => {
   try {
@@ -114,11 +115,7 @@ router.post('/', protect, async (req, res) => {
           patient: req.body.patient,
           test: testId,
           doctor: req.body.doctor,
-          results: test.parameters.map(p => ({
-            parameterName: p.name,
-            unit: p.unit,
-            normalRange: p.normalRange?.general?.text || '',
-          })),
+          results: buildReportResults(test),
           status: 'pending',
         });
         await report.save();

@@ -54,13 +54,22 @@ export default function FillReportReading() {
   const updateResult = (reportIdx, resultIdx, value) => {
     setReports(prev => {
       const updated = [...prev];
-      const result = { ...updated[reportIdx].results[resultIdx], value };
-      // Auto-calculate flag
       const report = updated[reportIdx];
+      const result = { ...report.results[resultIdx], value };
       const param = report.test?.parameters?.find(p => p.name === result.parameterName);
-      if (param && result.type !== 'text' && result.type !== 'options') {
-        result.flag = calculateFlag(value, param.normalRange, appointment?.patient?.gender);
+
+      if (param) {
+        result.unit = param.unit || result.unit;
+        result.type = param.type;
+        result.normalRange = param.normalRange?.general?.text || result.normalRange || '';
       }
+
+      if (param && param.type === 'numeric' && value) {
+        result.flag = calculateFlag(value, param.normalRange, appointment?.patient?.gender);
+      } else {
+        result.flag = '';
+      }
+
       updated[reportIdx].results[resultIdx] = result;
       return updated;
     });
