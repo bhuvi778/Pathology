@@ -24,14 +24,32 @@ const getApplicableRange = (normalRange = {}, gender) => {
   return normalRange?.[normalizedGender] || normalRange?.general || normalRange?.male || normalRange?.female || {};
 };
 
-const formatRangeText = (range = {}) => {
-  if (range.text) return range.text;
+const calculateFlag = (value, range = {}) => {
+  if (value === '' || value === null || value === undefined) return '';
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return '';
+
   const min = toNumberOrUndefined(range.min);
   const max = toNumberOrUndefined(range.max);
-  if (min !== undefined && max !== undefined) return `${min} - ${max}`;
-  if (min !== undefined) return `>= ${min}`;
-  if (max !== undefined) return `<= ${max}`;
-  return '';
+  if (max !== undefined && numericValue > max) return 'H';
+  if (min !== undefined && numericValue < min) return 'L';
+  return 'N';
+};
+
+const formatRangeText = (range = {}) => {
+  const min = toNumberOrUndefined(range.min);
+  const max = toNumberOrUndefined(range.max);
+  const numericRange = min !== undefined && max !== undefined
+    ? `${min} - ${max}`
+    : min !== undefined
+      ? `>= ${min}`
+      : max !== undefined
+        ? `<= ${max}`
+        : '';
+
+  if (range.text && numericRange) return `${range.text} (${numericRange})`;
+  if (range.text) return range.text;
+  return numericRange;
 };
 
 const buildResultFromParameter = (test, parameter, existingResult = {}, gender) => {
@@ -51,7 +69,9 @@ const buildResultFromParameter = (test, parameter, existingResult = {}, gender) 
     options: Array.isArray(parameter.options) ? parameter.options : [],
     rangeMin: toNumberOrUndefined(applicableRange.min),
     rangeMax: toNumberOrUndefined(applicableRange.max),
-    flag: existingResult.flag || '',
+    flag: parameter.type === 'numeric'
+      ? calculateFlag(existingResult.value, applicableRange)
+      : (existingResult.flag || ''),
   };
 };
 
@@ -177,4 +197,5 @@ module.exports = {
   mergeReportsByAppointment,
   normalizeGender,
   validateReportResults,
+  calculateFlag,
 };

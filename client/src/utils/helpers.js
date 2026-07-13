@@ -62,6 +62,7 @@ export const getFlagColor = (flag) => {
   if (flag === 'H') return 'text-red-600 font-bold';
   if (flag === 'L') return 'text-blue-600 font-bold';
   if (flag === 'C') return 'text-purple-600 font-bold';
+  if (flag === 'N') return 'text-emerald-600 font-bold';
   return '';
 };
 
@@ -77,11 +78,25 @@ export const getApplicableRange = (range = {}, gender = 'general') => {
 
 export const formatRangeDisplay = (range = {}, gender = 'general') => {
   const selectedRange = getApplicableRange(range, gender);
+  const numericRange = selectedRange?.min !== undefined && selectedRange?.max !== undefined
+    ? `${selectedRange.min} - ${selectedRange.max}`
+    : selectedRange?.min !== undefined
+      ? `>= ${selectedRange.min}`
+      : selectedRange?.max !== undefined
+        ? `<= ${selectedRange.max}`
+        : '';
+
+  if (selectedRange?.text && numericRange) return `${selectedRange.text} (${numericRange})`;
   if (selectedRange?.text) return selectedRange.text;
-  if (selectedRange?.min !== undefined && selectedRange?.max !== undefined) return `${selectedRange.min} - ${selectedRange.max}`;
-  if (selectedRange?.min !== undefined) return `>= ${selectedRange.min}`;
-  if (selectedRange?.max !== undefined) return `<= ${selectedRange.max}`;
-  return '';
+  return numericRange;
+};
+
+export const getFlagBadgeClass = (flag) => {
+  if (flag === 'H') return 'bg-red-100 text-red-600';
+  if (flag === 'L') return 'bg-blue-100 text-blue-600';
+  if (flag === 'C') return 'bg-purple-100 text-purple-600';
+  if (flag === 'N') return 'bg-emerald-100 text-emerald-600';
+  return 'bg-slate-100 text-slate-500';
 };
 
 export const getReportTestNames = (report) => {

@@ -6,6 +6,7 @@ function getFlagDisplay(flag) {
   if (flag === 'H') return <span style={{ color: '#dc2626', fontWeight: 'bold' }}>H</span>;
   if (flag === 'L') return <span style={{ color: '#2563eb', fontWeight: 'bold' }}>L</span>;
   if (flag === 'C') return <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>C</span>;
+  if (flag === 'N') return <span style={{ color: '#059669', fontWeight: 'bold' }}>N</span>;
   return null;
 }
 

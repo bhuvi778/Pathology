@@ -10,6 +10,7 @@ import ReportPrint from '../../components/reports/ReportPrint';
 import {
   calculateFlag,
   formatDate,
+  getFlagBadgeClass,
   getReportTestLabel,
   groupReportResults,
   validateNumericResult,
@@ -274,8 +275,8 @@ export default function EnterResults({ title = 'Enter Test Results' }) {
                               <td className="p-3 text-slate-500 text-xs">{result.unit || '—'}</td>
                               <td className="p-3 text-slate-500 text-xs">{result.normalRange || '—'}</td>
                               <td className="p-3">
-                                {result.flag && result.flag !== 'N' && (
-                                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${result.flag === 'H' ? 'bg-red-100 text-red-600' : result.flag === 'L' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
+                                {result.flag && (
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${getFlagBadgeClass(result.flag)}`}>
                                     {result.flag}
                                   </span>
                                 )}
