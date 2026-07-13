@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, TestTube, Search, ChevronDown, Trash2, X } from 'lucide-react';
+import { Plus, Edit, Search, Trash2 } from 'lucide-react';
 import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
-import { getCategoryLabel, formatCurrency } from '../../utils/helpers';
+import { formatCurrency, formatRangeDisplay, getCategoryLabel } from '../../utils/helpers';
 
 const CATEGORIES = ['hematology', 'biochemistry', 'serology', 'urology', 'microbiology', 'hormones', 'radiology', 'cardiology', 'other'];
 const CAT_COLORS = { hematology: 'bg-red-100 text-red-700', biochemistry: 'bg-blue-100 text-blue-700', serology: 'bg-purple-100 text-purple-700', urology: 'bg-yellow-100 text-yellow-700', microbiology: 'bg-green-100 text-green-700', hormones: 'bg-pink-100 text-pink-700', radiology: 'bg-slate-100 text-slate-700', cardiology: 'bg-orange-100 text-orange-700', other: 'bg-gray-100 text-gray-700' };
@@ -22,6 +22,13 @@ export default function ManageTests() {
   const [form, setForm] = useState({ name: '', shortName: '', category: 'hematology', price: '', turnaroundTime: '24 hours', sampleType: 'Blood', description: '', parameters: [] });
   const [showParamForm, setShowParamForm] = useState(false);
   const [paramForm, setParamForm] = useState({ name: '', unit: '', type: 'numeric', normalRange: { male: { min: '', max: '', text: '' }, female: { min: '', max: '', text: '' }, general: { min: '', max: '', text: '' } }, options: [] });
+  const [editingParamIndex, setEditingParamIndex] = useState(null);
+
+  const resetParamForm = () => {
+    setParamForm({ name: '', unit: '', type: 'numeric', normalRange: { male: { min: '', max: '', text: '' }, female: { min: '', max: '', text: '' }, general: { min: '', max: '', text: '' } }, options: [] });
+    setEditingParamIndex(null);
+    setShowParamForm(false);
+  };
 
   const load = () => api.get('/tests/all').then(r => setTests(r.data)).catch(console.error).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
@@ -44,13 +51,42 @@ export default function ManageTests() {
       description: t.description || '',
       parameters: t.parameters || []
     });
-    setShowParamForm(false);
+    resetParamForm();
     setModal(true);
   };
 
+  const normalizeRange = (range) => ({
+    min: range.min === '' ? undefined : Number(range.min),
+    max: range.max === '' ? undefined : Number(range.max),
+    text: range.text || '',
+  });
+
+  const getParameterValidationError = () => {
+    if (!paramForm.name.trim()) return 'Parameter name is required';
+
+    const duplicate = form.parameters.findIndex((param, index) => param.name.toLowerCase() === paramForm.name.trim().toLowerCase() && index !== editingParamIndex);
+    if (duplicate >= 0) return 'Parameter name must be unique within the test';
+
+    if (paramForm.type === 'options' && !paramForm.options.filter((option) => option.trim()).length) {
+      return 'Add at least one option';
+    }
+
+    if (paramForm.type === 'numeric') {
+      for (const key of ['male', 'female', 'general']) {
+        const normalized = normalizeRange(paramForm.normalRange[key]);
+        if (normalized.min !== undefined && normalized.max !== undefined && normalized.min > normalized.max) {
+          return `${key.charAt(0).toUpperCase() + key.slice(1)} range min cannot be greater than max`;
+        }
+      }
+    }
+
+    return '';
+  };
+
   const addParameter = () => {
-    if (!paramForm.name.trim()) {
-      toast.error('Parameter name is required');
+    const validationError = getParameterValidationError();
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
     
@@ -59,17 +95,37 @@ export default function ManageTests() {
       unit: paramForm.unit || '',
       type: paramForm.type,
       normalRange: {
-        male: { min: paramForm.normalRange.male.min ? Number(paramForm.normalRange.male.min) : undefined, max: paramForm.normalRange.male.max ? Number(paramForm.normalRange.male.max) : undefined, text: paramForm.normalRange.male.text || '' },
-        female: { min: paramForm.normalRange.female.min ? Number(paramForm.normalRange.female.min) : undefined, max: paramForm.normalRange.female.max ? Number(paramForm.normalRange.female.max) : undefined, text: paramForm.normalRange.female.text || '' },
-        general: { min: paramForm.normalRange.general.min ? Number(paramForm.normalRange.general.min) : undefined, max: paramForm.normalRange.general.max ? Number(paramForm.normalRange.general.max) : undefined, text: paramForm.normalRange.general.text || '' }
+        male: normalizeRange(paramForm.normalRange.male),
+        female: normalizeRange(paramForm.normalRange.female),
+        general: normalizeRange(paramForm.normalRange.general),
       },
       options: paramForm.type === 'options' ? paramForm.options.filter(o => o.trim()) : []
     };
     
-    setForm(f => ({ ...f, parameters: [...f.parameters, newParam] }));
-    setParamForm({ name: '', unit: '', type: 'numeric', normalRange: { male: { min: '', max: '', text: '' }, female: { min: '', max: '', text: '' }, general: { min: '', max: '', text: '' } }, options: [] });
-    setShowParamForm(false);
-    toast.success('Parameter added!');
+    setForm((currentForm) => {
+      const parameters = [...currentForm.parameters];
+      if (editingParamIndex !== null) parameters[editingParamIndex] = newParam;
+      else parameters.push(newParam);
+      return { ...currentForm, parameters };
+    });
+    resetParamForm();
+    toast.success(editingParamIndex !== null ? 'Parameter updated!' : 'Parameter added!');
+  };
+
+  const editParameter = (param, idx) => {
+    setEditingParamIndex(idx);
+    setParamForm({
+      name: param.name || '',
+      unit: param.unit || '',
+      type: param.type || 'numeric',
+      normalRange: {
+        male: { min: param.normalRange?.male?.min ?? '', max: param.normalRange?.male?.max ?? '', text: param.normalRange?.male?.text || '' },
+        female: { min: param.normalRange?.female?.min ?? '', max: param.normalRange?.female?.max ?? '', text: param.normalRange?.female?.text || '' },
+        general: { min: param.normalRange?.general?.min ?? '', max: param.normalRange?.general?.max ?? '', text: param.normalRange?.general?.text || '' },
+      },
+      options: Array.isArray(param.options) ? param.options : [],
+    });
+    setShowParamForm(true);
   };
 
   const removeParameter = (idx) => {
@@ -80,6 +136,10 @@ export default function ManageTests() {
     e.preventDefault();
     setSaving(true);
     try {
+      if (!form.parameters.length) {
+        toast.error('Add at least one parameter to the test');
+        return;
+      }
       if (editing) await api.put(`/tests/${editing}`, form);
       else await api.post('/tests', form);
       toast.success(editing ? 'Test updated!' : 'Test added!');
@@ -107,7 +167,7 @@ export default function ManageTests() {
           <h1 className="text-2xl font-bold text-slate-800">Tests & Prices</h1>
           <p className="text-slate-500 text-sm">{tests.filter(t => t.active).length} active tests</p>
         </div>
-        <button onClick={() => { setEditing(null); setForm({ name: '', shortName: '', category: 'hematology', price: '', turnaroundTime: '24 hours', sampleType: 'Blood', description: '', parameters: [] }); setShowParamForm(false); setModal(true); }} className="btn-primary flex items-center gap-2">
+        <button onClick={() => { setEditing(null); setForm({ name: '', shortName: '', category: 'hematology', price: '', turnaroundTime: '24 hours', sampleType: 'Blood', description: '', parameters: [] }); resetParamForm(); setModal(true); }} className="btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" /> Add Test
         </button>
       </div>
@@ -194,7 +254,7 @@ export default function ManageTests() {
           <div className="border-t border-slate-200 pt-4">
             <div className="flex items-center justify-between mb-3">
               <label className="label font-bold">Test Parameters</label>
-              <button type="button" onClick={() => setShowParamForm(!showParamForm)} className="btn-primary py-1.5 px-3 text-sm flex items-center gap-1.5">
+                  <button type="button" onClick={() => { if (showParamForm) resetParamForm(); else setShowParamForm(true); }} className="btn-primary py-1.5 px-3 text-sm flex items-center gap-1.5">
                 <Plus className="w-4 h-4" /> Add Parameter
               </button>
             </div>
@@ -243,8 +303,8 @@ export default function ManageTests() {
                 )}
 
                 <div className="flex gap-2">
-                  <button type="button" onClick={addParameter} className="btn-primary py-1.5 px-3 text-sm flex-1">Save Parameter</button>
-                  <button type="button" onClick={() => setShowParamForm(false)} className="btn-secondary py-1.5 px-3 text-sm">Cancel</button>
+                  <button type="button" onClick={addParameter} className="btn-primary py-1.5 px-3 text-sm flex-1">{editingParamIndex !== null ? 'Update Parameter' : 'Save Parameter'}</button>
+                  <button type="button" onClick={resetParamForm} className="btn-secondary py-1.5 px-3 text-sm">Cancel</button>
                 </div>
               </div>
             )}
@@ -256,10 +316,18 @@ export default function ManageTests() {
                     <div>
                       <p className="font-medium text-slate-700">{param.name}</p>
                       <p className="text-xs text-slate-500">{param.type} {param.unit ? `• ${param.unit}` : ''}</p>
+                      {param.type === 'numeric' && (
+                        <p className="text-xs text-slate-400 mt-1">General range: {formatRangeDisplay(param.normalRange, 'general') || 'Not set'}</p>
+                      )}
                     </div>
-                    <button type="button" onClick={() => removeParameter(idx)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => editParameter(param, idx)} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button type="button" onClick={() => removeParameter(idx)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

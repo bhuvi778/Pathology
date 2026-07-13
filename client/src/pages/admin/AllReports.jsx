@@ -3,7 +3,7 @@ import { Search, FileText, Printer, ExternalLink, PackageCheck, Phone } from 'lu
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import api from '../../utils/api';
-import { formatDate } from '../../utils/helpers';
+import { formatDate, getReportTestLabel } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
 import ReportPrint from '../../components/reports/ReportPrint';
@@ -65,7 +65,7 @@ export default function AllReports() {
 
 👤 Patient: ${report.patient?.name}
 🆔 ID: ${report.patient?.patientId}
-🧪 Test: ${report.test?.name}
+🧪 Tests: ${getReportTestLabel(report)}
 📑 Report ID: ${report.reportId}
 📊 Status: ${report.status}
 
@@ -122,7 +122,7 @@ Please check your portal for details.
               <tr>
                 <th className="table-th">Report ID</th>
                 <th className="table-th">Patient</th>
-                <th className="table-th">Test</th>
+                <th className="table-th">Tests</th>
                 <th className="table-th">Doctor</th>
                 <th className="table-th">Status</th>
                 <th className="table-th">Date</th>
@@ -142,8 +142,8 @@ Please check your portal for details.
                     <p className="text-xs text-slate-400">{r.patient?.patientId}</p>
                   </td>
                   <td className="table-td">
-                    <p className="font-medium text-slate-700">{r.test?.name}</p>
-                    <p className="text-xs text-slate-400">{r.test?.category}</p>
+                    <p className="font-medium text-slate-700">{getReportTestLabel(r)}</p>
+                    <p className="text-xs text-slate-400">{r.tests?.length || (r.test ? 1 : 0)} test(s)</p>
                   </td>
                   <td className="table-td text-slate-500 text-sm">{r.doctor?.name || '—'}</td>
                   <td className="table-td"><Badge status={r.status} /></td>

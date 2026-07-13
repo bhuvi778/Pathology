@@ -65,11 +65,96 @@ export const getFlagColor = (flag) => {
   return '';
 };
 
+export const getApplicableRange = (range = {}, gender = 'general') => {
+  const normalizedGender = String(gender || 'general').toLowerCase().startsWith('m')
+    ? 'male'
+    : String(gender || 'general').toLowerCase().startsWith('f')
+      ? 'female'
+      : 'general';
+
+  return range?.[normalizedGender] || range?.general || range?.male || range?.female || {};
+};
+
+export const formatRangeDisplay = (range = {}, gender = 'general') => {
+  const selectedRange = getApplicableRange(range, gender);
+  if (selectedRange?.text) return selectedRange.text;
+  if (selectedRange?.min !== undefined && selectedRange?.max !== undefined) return `${selectedRange.min} - ${selectedRange.max}`;
+  if (selectedRange?.min !== undefined) return `>= ${selectedRange.min}`;
+  if (selectedRange?.max !== undefined) return `<= ${selectedRange.max}`;
+  return '';
+};
+
+export const getReportTestNames = (report) => {
+  const tests = Array.isArray(report?.tests) && report.tests.length
+    ? report.tests
+    : report?.test
+      ? [report.test]
+      : [];
+
+  return tests.map((test) => test?.name).filter(Boolean);
+};
+
+export const getReportTestLabel = (report) => {
+  const names = getReportTestNames(report);
+  if (!names.length) return 'No tests assigned';
+  return names.join(', ');
+};
+
+export const groupReportResults = (report) => {
+  const tests = Array.isArray(report?.tests) && report.tests.length
+    ? report.tests
+    : report?.test
+      ? [report.test]
+      : [];
+
+  const sections = tests.map((test) => ({
+    testId: test?._id || test,
+    test,
+    results: [],
+  }));
+
+  const sectionById = new Map(sections.map((section) => [String(section.testId), section]));
+
+  for (const result of report?.results || []) {
+    const testId = String(result.test || '');
+    const existingSection = sectionById.get(testId);
+    if (existingSection) {
+      existingSection.results.push(result);
+      continue;
+    }
+
+    const fallbackSection = {
+      testId,
+      test: {
+        _id: result.test,
+        name: result.testName,
+        shortName: result.testShortName,
+        sampleType: result.sampleType,
+        category: result.category,
+      },
+      results: [result],
+    };
+    sectionById.set(testId, fallbackSection);
+    sections.push(fallbackSection);
+  }
+
+  return sections.filter((section) => section.results.length > 0 || section.test?.name);
+};
+
+export const validateNumericResult = (value, result) => {
+  if (value === '' || value === null || value === undefined) return '';
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return 'Enter a valid number';
+  if (result?.rangeMin !== undefined && numericValue < result.rangeMin) return `Minimum allowed is ${result.rangeMin}`;
+  if (result?.rangeMax !== undefined && numericValue > result.rangeMax) return `Maximum allowed is ${result.rangeMax}`;
+  return '';
+};
+
 export const calculateFlag = (value, range, gender = 'general') => {
   if (!value || !range) return '';
   const num = parseFloat(value);
   if (isNaN(num)) return '';
-  const r = range[gender] || range.general;
+  const r = getApplicableRange(range, gender);
   if (!r) return '';
   if (r.max !== undefined && num > r.max) return 'H';
   if (r.min !== undefined && num < r.min) return 'L';

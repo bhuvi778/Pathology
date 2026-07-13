@@ -253,7 +253,7 @@ export default function PatientWorkflow() {
                             <div key={idx} className="bg-slate-50 p-2 rounded text-sm">
                               <div className="flex justify-between items-start">
                                 <div>
-                                  <p className="font-medium text-slate-800">{report.test?.name}</p>
+                                  <p className="font-medium text-slate-800">{report.tests?.map((test) => test?.name).filter(Boolean).join(', ') || report.test?.name}</p>
                                   <p className="text-xs text-slate-500">Report ID: {report.reportId}</p>
                                 </div>
                                 <span className={`text-xs px-2 py-1 rounded ${getStatusColor(report.status)}`}>

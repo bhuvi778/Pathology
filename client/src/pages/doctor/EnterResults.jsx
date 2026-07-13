@@ -1,15 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../utils/api';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print';
+import { CheckCircle, ChevronLeft, Printer, RefreshCw, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
-import { formatDate, calculateFlag, getFlagColor } from '../../utils/helpers';
-import { ChevronLeft, Printer, Save, CheckCircle, RefreshCw } from 'lucide-react';
 import ReportPrint from '../../components/reports/ReportPrint';
-import { useReactToPrint } from 'react-to-print';
+import {
+  calculateFlag,
+  formatDate,
+  getReportTestLabel,
+  groupReportResults,
+  validateNumericResult,
+} from '../../utils/helpers';
 
-export default function EnterResults() {
+const getErrorKey = (reportId, resultIndex) => `${reportId}-${resultIndex}`;
+
+export default function EnterResults({ title = 'Enter Test Results' }) {
   const { appointmentId } = useParams();
   const navigate = useNavigate();
   const [appointment, setAppointment] = useState(null);
@@ -19,6 +27,7 @@ export default function EnterResults() {
   const [printReport, setPrintReport] = useState(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const printRef = useRef();
 
   const handlePrint = useReactToPrint({ content: () => printRef.current });
@@ -36,11 +45,12 @@ export default function EnterResults() {
       ]);
       setAppointment(aptRes.data);
       setSelectedStatus(aptRes.data.status || 'pending');
-      setReports(rptRes.data.map(r => ({
-        ...r,
-        results: r.results.map(res => ({ ...res })),
-        remarksInput: r.remarks || '',
+      setReports((rptRes.data || []).map((report) => ({
+        ...report,
+        results: (report.results || []).map((result) => ({ ...result })),
+        remarksInput: report.remarks || '',
       })));
+      setFieldErrors({});
     } catch (err) {
       toast.error('Error loading appointment');
     } finally {
@@ -48,34 +58,43 @@ export default function EnterResults() {
     }
   };
 
-  useEffect(() => { load(); }, [appointmentId]);
+  useEffect(() => {
+    load();
+  }, [appointmentId]);
 
-  const updateResult = (reportIdx, resultIdx, value) => {
-    setReports(prev => {
-      const updated = [...prev];
-      const result = { ...updated[reportIdx].results[resultIdx], value };
-      
-      // Get parameter info from test
-      const report = updated[reportIdx];
-      const param = report.test?.parameters?.find(p => p.name === result.parameterName);
-      
-      // Update result fields from parameter
-      if (param) {
-        result.unit = param.unit || result.unit;
-        result.type = param.type;
-        // Use general normal range as default
-        result.normalRange = param.normalRange?.general?.text || result.normalRange;
-      }
-      
-      // Auto-calculate flag for numeric types
-      if (param && param.type === 'numeric' && value) {
-        result.flag = calculateFlag(value, param.normalRange, appointment?.patient?.gender);
-      } else {
+  const setResultError = (reportId, resultIndex, message) => {
+    const errorKey = getErrorKey(reportId, resultIndex);
+    setFieldErrors((current) => {
+      if (!message && !current[errorKey]) return current;
+      const next = { ...current };
+      if (message) next[errorKey] = message;
+      else delete next[errorKey];
+      return next;
+    });
+  };
+
+  const updateResult = (reportIndex, resultIndex, value) => {
+    setReports((currentReports) => {
+      const nextReports = [...currentReports];
+      const report = { ...nextReports[reportIndex] };
+      const results = [...report.results];
+      const result = { ...results[resultIndex], value };
+
+      const validationMessage = result.type === 'numeric'
+        ? validateNumericResult(value, result)
+        : '';
+      setResultError(report._id, resultIndex, validationMessage);
+
+      if (result.type === 'numeric' && value !== '' && !validationMessage) {
+        result.flag = calculateFlag(value, { general: { min: result.rangeMin, max: result.rangeMax } }, appointment?.patient?.gender);
+      } else if (value === '') {
         result.flag = '';
       }
-      
-      updated[reportIdx].results[resultIdx] = result;
-      return updated;
+
+      results[resultIndex] = result;
+      report.results = results;
+      nextReports[reportIndex] = report;
+      return nextReports;
     });
   };
 
@@ -85,7 +104,7 @@ export default function EnterResults() {
     try {
       await api.put(`/appointments/${appointmentId}`, { status: selectedStatus });
       toast.success(`Status updated to "${selectedStatus}"`);
-      setAppointment(prev => ({ ...prev, status: selectedStatus }));
+      setAppointment((current) => ({ ...current, status: selectedStatus }));
     } catch (err) {
       toast.error('Error updating status');
     } finally {
@@ -93,7 +112,21 @@ export default function EnterResults() {
     }
   };
 
-  const saveReport = async (report, idx, action = 'save') => {    setSaving(idx);
+  const saveReport = async (report, index, action = 'save') => {
+    const reportErrors = report.results
+      .map((result, resultIndex) => ({
+        resultIndex,
+        message: result.type === 'numeric' ? validateNumericResult(result.value, result) : '',
+      }))
+      .filter((entry) => entry.message);
+
+    if (reportErrors.length) {
+      reportErrors.forEach((entry) => setResultError(report._id, entry.resultIndex, entry.message));
+      toast.error(reportErrors[0].message);
+      return;
+    }
+
+    setSaving(index);
     try {
       const newStatus = action === 'verify' ? 'verified' : 'entered';
       await api.put(`/reports/${report._id}`, {
@@ -104,7 +137,7 @@ export default function EnterResults() {
       toast.success(action === 'verify' ? 'Report verified!' : 'Results saved!');
       load();
     } catch (err) {
-      toast.error('Error saving report');
+      toast.error(err?.response?.data?.message || 'Error saving report');
     } finally {
       setSaving(null);
     }
@@ -115,9 +148,11 @@ export default function EnterResults() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-slate-100"><ChevronLeft className="w-5 h-5 text-slate-600" /></button>
+        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-slate-100">
+          <ChevronLeft className="w-5 h-5 text-slate-600" />
+        </button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Enter Test Results</h1>
+          <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
           {appointment && (
             <p className="text-slate-500 text-sm">{appointment.patient?.name} • {appointment.appointmentId} • {formatDate(appointment.appointmentDate)}</p>
           )}
@@ -132,11 +167,11 @@ export default function EnterResults() {
             <div><p className="text-slate-400">Doctor</p><p className="font-semibold">{appointment.doctor?.name || 'Not assigned'}</p></div>
             <div><p className="text-slate-400">Priority</p><Badge status={appointment.priority === 'urgent' ? 'urgent' : 'normal'} /></div>
           </div>
-          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-3">
+          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-3 flex-wrap">
             <p className="text-sm text-slate-500 font-medium">Appointment Status:</p>
             <select
               value={selectedStatus}
-              onChange={e => setSelectedStatus(e.target.value)}
+              onChange={(event) => setSelectedStatus(event.target.value)}
               className="input-field w-auto text-sm py-1.5"
             >
               <option value="pending">Pending</option>
@@ -158,17 +193,22 @@ export default function EnterResults() {
         </div>
       )}
 
-      {reports.map((report, idx) => (
-        <div key={report._id} className="card">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">{report.test?.name}</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge status={report.status} />
-                <span className="text-xs text-slate-400">• {report.test?.sampleType}</span>
+      {reports.map((report, reportIndex) => {
+        const groupedResults = groupReportResults(report);
+        const hasErrors = report.results.some((_, resultIndex) => fieldErrors[getErrorKey(report._id, resultIndex)]);
+        const hasAnyValue = report.results.some((result) => String(result.value || '').trim());
+
+        return (
+          <div key={report._id} className="card">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Combined Patient Report</h2>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <Badge status={report.status} />
+                  <span className="text-xs text-slate-400">• {getReportTestLabel(report)}</span>
+                  <span className="text-xs text-slate-400">• ID: {report.reportId}</span>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
               {report.status !== 'pending' && (
                 <button
                   onClick={() => doPrint(report)}
@@ -178,121 +218,138 @@ export default function EnterResults() {
                 </button>
               )}
             </div>
-          </div>
 
-          {report.results.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50">
-                    <th className="text-left p-3 font-semibold text-slate-600">Parameter</th>
-                    <th className="text-left p-3 font-semibold text-slate-600 w-40">Result</th>
-                    <th className="text-left p-3 font-semibold text-slate-600">Unit</th>
-                    <th className="text-left p-3 font-semibold text-slate-600">Reference Range</th>
-                    <th className="text-left p-3 font-semibold text-slate-600">Flag</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.results.map((result, rIdx) => {
-                    const param = report.test?.parameters?.find(p => p.name === result.parameterName);
-                    const isOptions = param?.type === 'options';
-                    return (
-                      <tr key={rIdx} className="border-t border-slate-100">
-                        <td className="p-3 font-medium text-slate-700">{result.parameterName}</td>
-                        <td className="p-3">
-                          {isOptions ? (
-                            <select
-                              value={result.value || ''}
-                              onChange={e => updateResult(idx, rIdx, e.target.value)}
-                              className="border border-slate-200 rounded-lg px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm"
-                              disabled={report.status === 'verified'}
-                            >
-                              <option value="">Select...</option>
-                              {param?.options?.map(o => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                          ) : (
-                            <input
-                              type={param?.type === 'text' ? 'text' : 'number'}
-                              step="any"
-                              value={result.value || ''}
-                              onChange={e => updateResult(idx, rIdx, e.target.value)}
-                              className={`border rounded-lg px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm ${result.flag === 'H' ? 'border-red-300 bg-red-50' : result.flag === 'L' ? 'border-blue-300 bg-blue-50' : 'border-slate-200'}`}
-                              disabled={report.status === 'verified'}
-                            />
-                          )}
-                        </td>
-                        <td className="p-3 text-slate-500 text-xs">{result.unit}</td>
-                        <td className="p-3 text-slate-500 text-xs">{result.normalRange}</td>
-                        <td className="p-3">
-                          {result.flag && result.flag !== 'N' && (
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${result.flag === 'H' ? 'bg-red-100 text-red-600' : result.flag === 'L' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
-                              {result.flag}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="space-y-6">
+              {groupedResults.map((section) => (
+                <div key={String(section.test?._id || section.testId)} className="rounded-xl border border-slate-200 overflow-hidden">
+                  <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                    <h3 className="font-semibold text-slate-800">{section.test?.name}</h3>
+                    <p className="text-xs text-slate-500 mt-1">{section.test?.sampleType || 'Sample not set'}</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-white">
+                          <th className="text-left p-3 font-semibold text-slate-600">Parameter</th>
+                          <th className="text-left p-3 font-semibold text-slate-600 w-52">Result</th>
+                          <th className="text-left p-3 font-semibold text-slate-600">Unit</th>
+                          <th className="text-left p-3 font-semibold text-slate-600">Reference Range</th>
+                          <th className="text-left p-3 font-semibold text-slate-600">Flag</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {section.results.map((result) => {
+                          const resultIndex = report.results.findIndex((entry) => String(entry.test || '') === String(result.test || '') && entry.parameterName === result.parameterName);
+                          const fieldError = fieldErrors[getErrorKey(report._id, resultIndex)];
+                          const isOptions = result.type === 'options';
+
+                          return (
+                            <tr key={`${String(result.test || '')}-${result.parameterName}`} className="border-t border-slate-100 align-top">
+                              <td className="p-3 font-medium text-slate-700">{result.parameterName}</td>
+                              <td className="p-3">
+                                {isOptions ? (
+                                  <select
+                                    value={result.value || ''}
+                                    onChange={(event) => updateResult(reportIndex, resultIndex, event.target.value)}
+                                    className="border border-slate-200 rounded-lg px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm"
+                                    disabled={report.status === 'verified'}
+                                  >
+                                    <option value="">Select...</option>
+                                    {(result.options || []).map((option) => <option key={option} value={option}>{option}</option>)}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type={result.type === 'text' ? 'text' : 'number'}
+                                    step="any"
+                                    min={result.rangeMin}
+                                    max={result.rangeMax}
+                                    value={result.value || ''}
+                                    onChange={(event) => updateResult(reportIndex, resultIndex, event.target.value)}
+                                    className={`border rounded-lg px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm ${fieldError ? 'border-red-300 bg-red-50' : result.flag === 'H' ? 'border-red-300 bg-red-50' : result.flag === 'L' ? 'border-blue-300 bg-blue-50' : 'border-slate-200'}`}
+                                    disabled={report.status === 'verified'}
+                                  />
+                                )}
+                                {fieldError && <p className="text-xs text-red-600 mt-1">{fieldError}</p>}
+                              </td>
+                              <td className="p-3 text-slate-500 text-xs">{result.unit || '—'}</td>
+                              <td className="p-3 text-slate-500 text-xs">{result.normalRange || '—'}</td>
+                              <td className="p-3">
+                                {result.flag && result.flag !== 'N' && (
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${result.flag === 'H' ? 'bg-red-100 text-red-600' : result.flag === 'L' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
+                                    {result.flag}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
             </div>
-          ) : (
-            <p className="text-center text-slate-400 py-6">No parameters defined for this test</p>
-          )}
 
-          <div className="mt-4">
-            <label className="label">Remarks / Comments</label>
-            <textarea
-              value={report.remarksInput}
-              onChange={e => setReports(prev => { const u = [...prev]; u[idx].remarksInput = e.target.value; return u; })}
-              className="input-field"
-              rows={2}
-              placeholder="Any remarks about this test..."
-              disabled={report.status === 'verified'}
-            />
-          </div>
-
-          {report.status !== 'verified' && (
-            <div className="mt-4 flex gap-3 justify-end">
-              <button
-                onClick={() => saveReport(report, idx, 'save')}
-                disabled={saving === idx}
-                className="btn-secondary flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" /> {saving === idx ? 'Saving...' : 'Save Results'}
-              </button>
-              <button
-                onClick={() => saveReport(report, idx, 'verify')}
-                disabled={saving === idx || report.results.every(r => !r.value)}
-                className="btn-success flex items-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" /> {saving === idx ? 'Verifying...' : 'Verify & Sign'}
-              </button>
+            <div className="mt-4">
+              <label className="label">Remarks / Comments</label>
+              <textarea
+                value={report.remarksInput}
+                onChange={(event) => setReports((currentReports) => {
+                  const nextReports = [...currentReports];
+                  nextReports[reportIndex] = { ...nextReports[reportIndex], remarksInput: event.target.value };
+                  return nextReports;
+                })}
+                className="input-field"
+                rows={2}
+                placeholder="Any remarks about this report..."
+                disabled={report.status === 'verified'}
+              />
             </div>
-          )}
-          {report.status === 'verified' && (
-            <div className="mt-4 flex gap-3 justify-end">
-              <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
-                <CheckCircle className="w-4 h-4" /> Report Verified
+
+            {report.status !== 'verified' && (
+              <div className="mt-4 flex gap-3 justify-end flex-wrap">
+                <button
+                  onClick={() => saveReport(report, reportIndex, 'save')}
+                  disabled={saving === reportIndex || hasErrors}
+                  className="btn-secondary flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" /> {saving === reportIndex ? 'Saving...' : 'Save Results'}
+                </button>
+                <button
+                  onClick={() => saveReport(report, reportIndex, 'verify')}
+                  disabled={saving === reportIndex || !hasAnyValue || hasErrors}
+                  className="btn-success flex items-center gap-2 disabled:opacity-50"
+                >
+                  <CheckCircle className="w-4 h-4" /> {saving === reportIndex ? 'Verifying...' : 'Verify & Sign'}
+                </button>
               </div>
-              <button
-                onClick={async () => {
-                  try {
-                    await api.put(`/reports/${report._id}`, { status: 'delivered' });
-                    toast.success('Report marked as delivered!');
-                    load();
-                  } catch { toast.error('Error updating status'); }
-                }}
-                className="btn-primary py-2 px-4 text-sm flex items-center gap-1.5"
-              >
-                <CheckCircle className="w-4 h-4" /> Mark as Delivered
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
+            )}
 
-      {/* Hidden print component */}
+            {report.status === 'verified' && (
+              <div className="mt-4 flex gap-3 justify-end flex-wrap">
+                <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+                  <CheckCircle className="w-4 h-4" /> Report Verified
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.put(`/reports/${report._id}`, { status: 'delivered' });
+                      toast.success('Report marked as delivered!');
+                      load();
+                    } catch (err) {
+                      toast.error(err?.response?.data?.message || 'Error updating status');
+                    }
+                  }}
+                  className="btn-primary py-2 px-4 text-sm flex items-center gap-1.5"
+                >
+                  <CheckCircle className="w-4 h-4" /> Mark as Delivered
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
       <div className="hidden">
         <div ref={printRef}>
           {printReport && appointment && (

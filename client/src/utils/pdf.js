@@ -1,4 +1,13 @@
 // PDF Export Utility for Reports
+const getReportTestLabel = (report) => {
+  const tests = Array.isArray(report?.tests) && report.tests.length
+    ? report.tests
+    : report?.test
+      ? [report.test]
+      : [];
+  return tests.map((test) => test?.name).filter(Boolean).join(', ');
+};
+
 export const exportReportToPDF = (report, labSettings = {}) => {
   try {
     const element = document.getElementById(`report-print-${report._id}`);
@@ -105,9 +114,7 @@ Contact: ${report.patient?.phone}
 
 TEST INFORMATION
 ----------------
-Test Name: ${report.test?.name}
-Test Category: ${report.test?.category}
-Sample Type: ${report.test?.sampleType}
+Tests: ${getReportTestLabel(report)}
 
 RESULTS
 -------

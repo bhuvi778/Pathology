@@ -5,6 +5,7 @@ const Bill = require('../models/Bill');
 const Test = require('../models/Test');
 const Report = require('../models/Report');
 const User = require('../models/User');
+const Patient = require('../models/Patient');
 const { protect, authorize } = require('../middleware/auth');
 const { buildReportResults } = require('../utils/reportResults');
 
@@ -106,24 +107,21 @@ router.post('/', protect, async (req, res) => {
     const appointment = new Appointment({ ...req.body, createdBy: req.user._id });
     await appointment.save();
 
-    // Auto-create reports for each test
-    for (const testId of req.body.tests || []) {
-      const test = await Test.findById(testId);
-      if (test) {
-        const report = new Report({
-          appointment: appointment._id,
-          patient: req.body.patient,
-          test: testId,
-          doctor: req.body.doctor,
-          results: buildReportResults(test),
-          status: 'pending',
-        });
-        await report.save();
-      }
-    }
+    const patient = await Patient.findById(req.body.patient).select('gender');
+    const tests = await Test.find({ _id: { $in: req.body.tests || [] } });
+
+    // Auto-create a single combined report for the appointment.
+    const report = new Report({
+      appointment: appointment._id,
+      patient: req.body.patient,
+      doctor: req.body.doctor,
+      tests: tests.map((test) => test._id),
+      results: buildReportResults(tests, [], patient?.gender),
+      status: 'pending',
+    });
+    await report.save();
 
     // Auto-create bill
-    const tests = await Test.find({ _id: { $in: req.body.tests || [] } });
     const items = tests.map(t => ({ test: t._id, testName: t.name, price: t.price }));
     const subtotal = items.reduce((acc, i) => acc + i.price, 0);
     const bill = new Bill({

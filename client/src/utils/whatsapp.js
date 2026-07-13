@@ -1,11 +1,20 @@
 // WhatsApp Sharing Utility
+const getReportTestLabel = (report) => {
+  const tests = Array.isArray(report?.tests) && report.tests.length
+    ? report.tests
+    : report?.test
+      ? [report.test]
+      : [];
+  return tests.map((test) => test?.name).filter(Boolean).join(', ');
+};
+
 export const shareReportOnWhatsApp = (report, labName = 'Lab') => {
   const message = `
 📋 *Lab Report Generated*
 
 👤 *Patient:* ${report.patient?.name}
 🆔 *Patient ID:* ${report.patient?.patientId}
-🧪 *Test:* ${report.test?.name}
+🧪 *Tests:* ${getReportTestLabel(report)}
 📑 *Report ID:* ${report.reportId}
 📊 *Status:* ${report.status}
 📅 *Date:* ${new Date(report.reportDate).toLocaleDateString()}
@@ -27,7 +36,7 @@ export const shareMultipleReportsOnWhatsApp = (reports, labName = 'Lab') => {
 
 Reports Generated: ${reports.length}
 
-${reports.map((r, i) => `${i + 1}. ${r.patient?.name} - ${r.test?.name} (${r.reportId})`).join('\n')}
+${reports.map((r, i) => `${i + 1}. ${r.patient?.name} - ${getReportTestLabel(r)} (${r.reportId})`).join('\n')}
 
 Please login to your portal to view all reports.
   `.trim();
@@ -44,7 +53,7 @@ export const shareReportViaWhatsAppNumber = (report, phoneNumber) => {
 
 👤 *Patient:* ${report.patient?.name}
 🆔 *Patient ID:* ${report.patient?.patientId}
-🧪 *Test:* ${report.test?.name}
+🧪 *Tests:* ${getReportTestLabel(report)}
 📑 *Report ID:* ${report.reportId}
 📊 *Status:* ${report.status}
   `.trim();

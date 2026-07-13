@@ -113,7 +113,7 @@ export default function DoctorDashboard() {
                   onClick={() => navigate(`/doctor/results/${r.appointment}`)}>
                   <div>
                     <p className="font-medium text-slate-800 text-sm">{r.patient?.name}</p>
-                    <p className="text-xs text-slate-500">{r.test?.name}</p>
+                    <p className="text-xs text-slate-500">{r.tests?.map((test) => test?.name).filter(Boolean).join(', ') || r.test?.name}</p>
                   </div>
                   <span className="text-xs text-amber-600 font-medium bg-amber-100 px-2 py-1 rounded">Pending</span>
                 </div>

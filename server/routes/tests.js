@@ -3,6 +3,42 @@ const router = express.Router();
 const Test = require('../models/Test');
 const { protect, authorize } = require('../middleware/auth');
 
+const sanitizeParameter = (parameter) => ({
+  ...parameter,
+  name: parameter.name?.trim(),
+  unit: parameter.unit?.trim() || '',
+  options: parameter.type === 'options' ? (parameter.options || []).map((option) => option.trim()).filter(Boolean) : [],
+});
+
+const validateTestPayload = (payload) => {
+  const parameters = Array.isArray(payload.parameters) ? payload.parameters.map(sanitizeParameter) : [];
+  if (!parameters.length) return 'At least one parameter is required.';
+
+  const names = new Set();
+  for (const parameter of parameters) {
+    if (!parameter.name) return 'Parameter name is required.';
+    const normalizedName = parameter.name.toLowerCase();
+    if (names.has(normalizedName)) return `Duplicate parameter name: ${parameter.name}`;
+    names.add(normalizedName);
+
+    if (parameter.type === 'options' && !parameter.options.length) {
+      return `Add at least one option for ${parameter.name}.`;
+    }
+
+    if (parameter.type === 'numeric') {
+      for (const key of ['male', 'female', 'general']) {
+        const range = parameter.normalRange?.[key];
+        if (range?.min !== undefined && range?.max !== undefined && Number(range.min) > Number(range.max)) {
+          return `${parameter.name}: ${key} minimum cannot be greater than maximum.`;
+        }
+      }
+    }
+  }
+
+  payload.parameters = parameters;
+  return '';
+};
+
 router.get('/', protect, async (req, res) => {
   try {
     const { category, active } = req.query;
@@ -38,6 +74,8 @@ router.get('/:id', protect, async (req, res) => {
 
 router.post('/', protect, authorize('admin'), async (req, res) => {
   try {
+    const validationMessage = validateTestPayload(req.body);
+    if (validationMessage) return res.status(400).json({ message: validationMessage });
     const test = new Test(req.body);
     await test.save();
     res.status(201).json(test);
@@ -48,6 +86,10 @@ router.post('/', protect, authorize('admin'), async (req, res) => {
 
 router.put('/:id', protect, authorize('admin'), async (req, res) => {
   try {
+    if (req.body.parameters) {
+      const validationMessage = validateTestPayload(req.body);
+      if (validationMessage) return res.status(400).json({ message: validationMessage });
+    }
     const test = await Test.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!test) return res.status(404).json({ message: 'Test not found' });
     res.json(test);

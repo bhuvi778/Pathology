@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
-import { formatDate } from '../../utils/helpers';
+import { formatDate, getReportTestLabel } from '../../utils/helpers';
 import { Printer } from 'lucide-react';
 import ReportPrint from '../../components/reports/ReportPrint';
 import { useReactToPrint } from 'react-to-print';
@@ -69,7 +69,7 @@ export default function ViewReports() {
               <tr>
                 <th className="table-th">Report ID</th>
                 <th className="table-th">Patient</th>
-                <th className="table-th">Test</th>
+                <th className="table-th">Tests</th>
                 <th className="table-th">Doctor</th>
                 <th className="table-th">Date</th>
                 <th className="table-th">Status</th>
@@ -87,7 +87,7 @@ export default function ViewReports() {
                     <p className="font-medium text-slate-800">{r.patient?.name}</p>
                     <p className="text-xs text-slate-400">{r.patient?.patientId}</p>
                   </td>
-                  <td className="table-td text-slate-600 text-sm">{r.test?.name}</td>
+                  <td className="table-td text-slate-600 text-sm">{getReportTestLabel(r)}</td>
                   <td className="table-td text-slate-500 text-sm">{r.doctor?.name || '—'}</td>
                   <td className="table-td text-slate-500 text-sm">{formatDate(r.reportDate)}</td>
                   <td className="table-td"><Badge status={r.status} /></td>

@@ -3,7 +3,7 @@ import { FileText, Download, Phone, Filter, Search, Eye, Printer } from 'lucide-
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import api from '../../utils/api';
-import { formatDate } from '../../utils/helpers';
+import { formatDate, getReportTestLabel } from '../../utils/helpers';
 import ReportPrint from '../../components/reports/ReportPrint';
 import toast from 'react-hot-toast';
 import { shareReportViaWhatsAppNumber } from '../../utils/whatsapp';
@@ -40,7 +40,7 @@ export default function ViewReports() {
       report.patient?.name?.toLowerCase().includes(searchLower) ||
       report.patient?.patientId?.toLowerCase().includes(searchLower) ||
       report.patient?.ipNumber?.toLowerCase().includes(searchLower) ||
-      report.test?.name?.toLowerCase().includes(searchLower) ||
+      getReportTestLabel(report).toLowerCase().includes(searchLower) ||
       report.reportId?.toLowerCase().includes(searchLower)
     );
   });
@@ -58,7 +58,7 @@ export default function ViewReports() {
 
 👤 Patient: ${report.patient?.name}
 🆔 ID: ${report.patient?.patientId}
-🧪 Test: ${report.test?.name}
+🧪 Tests: ${getReportTestLabel(report)}
 📑 Report ID: ${report.reportId}
 📊 Status: ${report.status}
 
@@ -154,8 +154,8 @@ Please check your portal for details.
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <span className="text-slate-500">Test:</span>
-                        <p className="font-medium">{report.test?.name}</p>
+                        <span className="text-slate-500">Tests:</span>
+                        <p className="font-medium">{getReportTestLabel(report)}</p>
                       </div>
                       <div>
                         <span className="text-slate-500">Report ID:</span>
