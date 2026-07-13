@@ -62,9 +62,10 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
   const reportLayout = resolvedSettings.reportLayout || 'standard';
   const padding = reportLayout === 'compact' ? 12 : 20;
   const fontSize = reportLayout === 'compact' ? 11 : 12;
+  const topPadding = isShareMode ? '32px' : '5cm';
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: includeHeader ? '32px' : '24px', maxWidth: '800px', margin: '0 auto', backgroundColor: '#fff' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: topPadding, maxWidth: '800px', margin: '0 auto', backgroundColor: '#fff' }}>
       {includeHeader && (
         <div style={{ marginBottom: '16px', textAlign: 'center', borderBottom: '2px solid #1d4ed8', paddingBottom: '12px' }}>
           <div style={{ fontSize: `${reportLayout === 'compact' ? 18 : 20}px`, fontWeight: '700', color: '#0f172a' }}>
