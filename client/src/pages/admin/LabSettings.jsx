@@ -18,25 +18,24 @@ export default function LabSettings() {
         localStorage.setItem('labSettings', JSON.stringify(response.data));
       } catch (err) {
         console.error('Error loading settings:', err);
-        // Fall back to default values
-        const fallbackSettings = {
-          labName: 'Shri Dhanvantari Pathology & Diagnostic Centre',
-          labAddress: '42, Nehru Nagar, Near District Hospital, Lucknow, Uttar Pradesh - 226001',
-          labPhone: '+91-522-2601234',
-          labEmail: 'info@dhanvantarilab.in',
-          labDirector: 'Dr. Rajesh Kumar Sharma',
-          labDirectorQualification: 'MBBS, MD (Pathology), NABL Accredited',
-          reportFooter: 'This report is electronically generated. For queries, contact: +91-522-2601234',
-          registrationNumber: 'UP-DL-2019-04521',
+        setSettings({
+          labName: '',
+          labAddress: '',
+          labPhone: '',
+          labEmail: '',
+          labDirector: '',
+          labDirectorQualification: '',
+          reportHeader: '',
+          reportFooter: '',
+          registrationNumber: '',
           includeHeader: true,
           includeFooter: true,
           autoPrint: false,
           reportLayout: 'standard',
           autoIpNumber: true,
           ipNumberPrefix: 'IP-',
-        };
-        setSettings(fallbackSettings);
-        localStorage.setItem('labSettings', JSON.stringify(fallbackSettings));
+          doctorSignature: '',
+        });
       } finally {
         setLoading(false);
       }

@@ -2,9 +2,9 @@ import { formatDate, formatCurrency } from '../../utils/helpers';
 
 export default function AppointmentReceiptPrint({ appointment }) {
   const labSettings = JSON.parse(localStorage.getItem('labSettings') || '{}');
-  const labName = labSettings.labName || 'Shri Dhanvantari Pathology & Diagnostic Centre';
-  const labAddress = labSettings.labAddress || '42, Nehru Nagar, Near District Hospital, Lucknow, Uttar Pradesh - 226001';
-  const labPhone = labSettings.labPhone || '+91-522-2601234';
+  const labName = labSettings.labName || 'Laboratory';
+  const labAddress = labSettings.labAddress || '';
+  const labPhone = labSettings.labPhone || '';
   const patient = appointment?.patient;
   const tests = appointment?.tests || [];
   const total = tests.reduce((acc, t) => acc + (t.price || 0), 0);

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "reactivate-all": "node scripts/reactivateAllUsers.js"
+    "reactivate-all": "node scripts/reactivateAllUsers.js",
+    "clean-db-keep-latest-admin": "node scripts/cleanDbKeepLatestAdmin.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

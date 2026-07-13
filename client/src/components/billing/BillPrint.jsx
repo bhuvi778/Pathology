@@ -2,9 +2,9 @@ import { formatDate, formatCurrency } from '../../utils/helpers';
 
 export default function BillPrint({ bill }) {
   const labSettings = JSON.parse(localStorage.getItem('labSettings') || '{}');
-  const labName = labSettings.labName || 'Shri Dhanvantari Pathology & Diagnostic Centre';
-  const labAddress = labSettings.labAddress || '42, Nehru Nagar, Near District Hospital, Lucknow, Uttar Pradesh - 226001';
-  const labPhone = labSettings.labPhone || '+91-522-2601234';
+  const labName = labSettings.labName || 'Laboratory';
+  const labAddress = labSettings.labAddress || '';
+  const labPhone = labSettings.labPhone || '';
   const patient = bill?.patient;
 
   const paymentStatusColor = bill?.paymentStatus === 'paid' ? '#16a34a' : bill?.paymentStatus === 'partial' ? '#d97706' : '#dc2626';
