@@ -54,27 +54,17 @@ export default function AllReports() {
     }
   };
 
-  const shareOnWhatsApp = (report) => {
-    const phoneNumber = report.patient?.phone;
-    if (phoneNumber) {
-      shareReportViaWhatsAppNumber(report, phoneNumber);
-      toast.success('WhatsApp opened! Message ready to send');
-    } else {
-      const message = `
-📋 *Report Generated* 📋
-
-👤 Patient: ${report.patient?.name}
-🆔 ID: ${report.patient?.patientId}
-🧪 Tests: ${getReportTestLabel(report)}
-📑 Report ID: ${report.reportId}
-📊 Status: ${report.status}
-
-Please check your portal for details.
-      `.trim();
-      const encoded = encodeURIComponent(message);
-      const whatsappLink = `https://wa.me/?text=${encoded}`;
-      window.open(whatsappLink, '_blank');
-      toast.success('WhatsApp opened! Share with patient');
+  const shareOnWhatsApp = async (report) => {
+    try {
+      const result = await shareReportViaWhatsAppNumber(report, report.patient?.phone || '');
+      if (result?.mode === 'native-share') {
+        toast.success('WhatsApp share sheet opened with PDF attached');
+      } else {
+        toast.success('PDF downloaded and WhatsApp chat opened');
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      toast.error('Could not prepare WhatsApp share');
     }
   };
 

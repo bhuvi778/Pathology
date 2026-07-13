@@ -118,8 +118,8 @@ export default function LabSettings() {
           <h2 className="text-base font-semibold text-slate-800 mb-4">Report Preferences</h2>
           <div className="space-y-4">
             <div>
-              <label className="label">Report Header Text</label>
-              <input value={settings.reportHeader || ''} onChange={e => setSettings(s => ({ ...s, reportHeader: e.target.value }))} className="input-field" placeholder="Optional report header" />
+              <label className="label">WhatsApp Share Header Text</label>
+              <input value={settings.reportHeader || ''} onChange={e => setSettings(s => ({ ...s, reportHeader: e.target.value }))} className="input-field" placeholder="Shown only in WhatsApp shared PDF" />
             </div>
             <div>
               <label className="label">Report Footer Note</label>
@@ -142,7 +142,7 @@ export default function LabSettings() {
               <label className="flex items-center justify-between gap-3 p-4 border border-slate-200 rounded-xl bg-slate-50">
                 <span>
                   <p className="font-medium text-slate-800">Include Header</p>
-                  <p className="text-sm text-slate-500">Show the report header on printed and PDF reports.</p>
+                  <p className="text-sm text-slate-500">Saved for share layout preferences. Printed reports stay header-free.</p>
                 </span>
                 <input type="checkbox" checked={settings.includeHeader} onChange={e => setSettings(s => ({ ...s, includeHeader: e.target.checked }))} className="h-5 w-5 rounded border-slate-300 text-primary-600" />
               </label>
@@ -188,7 +188,7 @@ export default function LabSettings() {
                   <span className="text-sm text-slate-600 break-all">{settings.doctorSignature}</span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-2">Upload a doctor's signature image to include in reports and PDFs.</p>
+              <p className="text-xs text-slate-500 mt-2">Upload a signature image to include only in WhatsApp shared PDFs.</p>
             </div>
             {settings.doctorSignature && (
               <div className="p-4 border border-slate-200 rounded-xl bg-slate-50">

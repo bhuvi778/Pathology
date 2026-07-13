@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import api from '../../utils/api';
 import { formatDate, getReportTestLabel, groupReportResults } from '../../utils/helpers';
 
@@ -10,10 +10,27 @@ function getFlagDisplay(flag) {
   return null;
 }
 
-export default function ReportPrint({ report, appointment }) {
+const resolveAssetUrl = (url) => {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url) || url.startsWith('data:')) return url;
+
+  const baseUrl = api.defaults.baseURL || '/api';
+  const root = /^https?:\/\//i.test(baseUrl)
+    ? baseUrl.replace(/\/api\/?$/, '')
+    : window.location.origin;
+
+  try {
+    return new URL(url, root).toString();
+  } catch {
+    return url;
+  }
+};
+
+export default function ReportPrint({ report, appointment, renderMode = 'print', labSettingsOverride }) {
   const patient = report?.patient || appointment?.patient;
   const groupedResults = groupReportResults(report);
   const [labSettings, setLabSettings] = useState(() => {
+    if (labSettingsOverride) return labSettingsOverride;
     try {
       return JSON.parse(localStorage.getItem('labSettings') || '{}');
     } catch {
@@ -22,25 +39,50 @@ export default function ReportPrint({ report, appointment }) {
   });
 
   useEffect(() => {
+    if (labSettingsOverride) {
+      setLabSettings(labSettingsOverride);
+      return;
+    }
+
     api.get('/settings').then((res) => {
       setLabSettings(res.data);
       localStorage.setItem('labSettings', JSON.stringify(res.data));
     }).catch(() => {});
-  }, []);
+  }, [labSettingsOverride]);
 
-  const includeHeader = labSettings.includeHeader !== false;
-  const includeFooter = labSettings.includeFooter !== false;
-  const reportLayout = labSettings.reportLayout || 'standard';
+  const resolvedSettings = useMemo(() => ({
+    ...labSettings,
+    doctorSignature: resolveAssetUrl(labSettings.doctorSignature),
+  }), [labSettings]);
+
+  const isShareMode = renderMode === 'share';
+  const includeHeader = isShareMode && Boolean(resolvedSettings.reportHeader || resolvedSettings.labName);
+  const includeFooter = resolvedSettings.includeFooter !== false;
+  const showSignature = isShareMode && Boolean(resolvedSettings.doctorSignature);
+  const reportLayout = resolvedSettings.reportLayout || 'standard';
   const padding = reportLayout === 'compact' ? 12 : 20;
   const fontSize = reportLayout === 'compact' ? 11 : 12;
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: '160px', maxWidth: '800px', margin: '0 auto' }}>
-      {includeHeader && labSettings.reportHeader && (
-        <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-          <div style={{ fontSize: `${reportLayout === 'compact' ? 14 : 16}px`, fontWeight: '700', color: '#1f2937' }}>
-            {labSettings.reportHeader}
+    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: includeHeader ? '32px' : '24px', maxWidth: '800px', margin: '0 auto', backgroundColor: '#fff' }}>
+      {includeHeader && (
+        <div style={{ marginBottom: '16px', textAlign: 'center', borderBottom: '2px solid #1d4ed8', paddingBottom: '12px' }}>
+          <div style={{ fontSize: `${reportLayout === 'compact' ? 18 : 20}px`, fontWeight: '700', color: '#0f172a' }}>
+            {resolvedSettings.labName || 'Laboratory Report'}
           </div>
+          {resolvedSettings.reportHeader && (
+            <div style={{ fontSize: '13px', marginTop: '6px', color: '#1d4ed8', fontWeight: '600' }}>
+              {resolvedSettings.reportHeader}
+            </div>
+          )}
+          {(resolvedSettings.labAddress || resolvedSettings.labPhone || resolvedSettings.labEmail) && (
+            <div style={{ marginTop: '8px', color: '#475569', fontSize: '11px', lineHeight: 1.5 }}>
+              {resolvedSettings.labAddress && <div>{resolvedSettings.labAddress}</div>}
+              <div>
+                {[resolvedSettings.labPhone, resolvedSettings.labEmail].filter(Boolean).join(' | ')}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -93,7 +135,7 @@ export default function ReportPrint({ report, appointment }) {
                 <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 'bold', fontSize: '11px' }}>Parameter</th>
                 <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', width: '100px' }}>Result</th>
                 <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', width: '80px' }}>Unit</th>
-                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', width: '140px' }}>Reference Range</th>
+                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', width: '160px' }}>Reference Range</th>
                 <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', width: '50px' }}>Flag</th>
               </tr>
             </thead>
@@ -101,7 +143,7 @@ export default function ReportPrint({ report, appointment }) {
               {section.results.map((result, index) => (
                 <tr key={`${String(result.test || '')}-${result.parameterName}`} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '7px 10px', fontWeight: '500' }}>{result.parameterName}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '13px', color: result.flag === 'H' ? '#dc2626' : result.flag === 'L' ? '#2563eb' : '#000' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '13px', color: result.flag === 'H' ? '#dc2626' : result.flag === 'L' ? '#2563eb' : result.flag === 'N' ? '#059669' : '#000' }}>
                     {result.value || '—'}
                   </td>
                   <td style={{ padding: '7px 10px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.unit || '—'}</td>
@@ -123,9 +165,27 @@ export default function ReportPrint({ report, appointment }) {
         </div>
       )}
 
-      {includeFooter && labSettings.reportFooter && (
-        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px', color: '#475569', fontSize: `${fontSize - 1}px`, lineHeight: 1.5 }}>
-          {labSettings.reportFooter}
+      {showSignature && (
+        <div style={{ marginTop: '28px', display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ textAlign: 'center', minWidth: '220px' }}>
+            <div style={{ height: '60px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+              <img src={resolvedSettings.doctorSignature} alt="Doctor Signature" style={{ maxHeight: '56px', maxWidth: '180px', objectFit: 'contain' }} />
+            </div>
+            <div style={{ borderTop: '1px solid #94a3b8', marginTop: '6px', paddingTop: '6px', color: '#0f172a', fontWeight: '600' }}>
+              {resolvedSettings.labDirector || report?.doctor?.name || 'Authorized Signatory'}
+            </div>
+            {resolvedSettings.labDirectorQualification && (
+              <div style={{ color: '#475569', fontSize: '11px', marginTop: '2px' }}>
+                {resolvedSettings.labDirectorQualification}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {includeFooter && resolvedSettings.reportFooter && (
+        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px', color: '#475569', fontSize: `${fontSize - 1}px`, lineHeight: 1.5, marginTop: '18px' }}>
+          {resolvedSettings.reportFooter}
         </div>
       )}
     </div>
