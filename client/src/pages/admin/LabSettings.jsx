@@ -67,7 +67,9 @@ export default function LabSettings() {
     formData.append('type', 'signature');
     setUploading(true);
     try {
-      const uploadRes = await api.post('/upload', formData);
+      const uploadRes = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       setSettings(s => ({ ...s, doctorSignature: uploadRes.data.url }));
       toast.success('Signature uploaded successfully');
     } catch (err) {

@@ -9,7 +9,6 @@ const uploadDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
   destination: (req, file, cb) => {
     const subDir = path.join(uploadDir, req.body.type || 'general');
     if (!fs.existsSync(subDir)) fs.mkdirSync(subDir, { recursive: true });
@@ -22,11 +21,28 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = /jpeg|jpg|png|gif|pdf/;
-  const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-  const mime = allowed.test(file.mimetype);
-  if (ext && mime) cb(null, true);
-  else cb(new Error('Only images and PDFs are allowed'));
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf'];
+  const allowedMimes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'application/pdf',
+    // Some devices/browsers upload with generic MIME for known file extensions.
+    'application/octet-stream',
+  ];
+
+  const extension = path.extname(file.originalname || '').toLowerCase();
+  const mime = String(file.mimetype || '').toLowerCase();
+  const hasAllowedExtension = allowedExtensions.includes(extension);
+  const hasAllowedMime = allowedMimes.includes(mime);
+
+  if (hasAllowedExtension || hasAllowedMime) {
+    cb(null, true);
+    return;
+  }
+
+  cb(new Error('File type not supported. Please upload JPG, PNG, GIF or PDF.'));
 };
 
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
