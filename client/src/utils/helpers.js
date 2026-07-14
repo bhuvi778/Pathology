@@ -160,8 +160,6 @@ export const validateNumericResult = (value, result) => {
   if (value === '' || value === null || value === undefined) return '';
   const numericValue = Number(value);
   if (!Number.isFinite(numericValue)) return 'Enter a valid number';
-  if (result?.rangeMin !== undefined && numericValue < result.rangeMin) return `Minimum allowed is ${result.rangeMin}`;
-  if (result?.rangeMax !== undefined && numericValue > result.rangeMax) return `Maximum allowed is ${result.rangeMax}`;
   return '';
 };
 

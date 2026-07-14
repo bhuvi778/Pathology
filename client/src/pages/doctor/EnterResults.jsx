@@ -262,8 +262,6 @@ export default function EnterResults({ title = 'Enter Test Results' }) {
                                   <input
                                     type={result.type === 'text' ? 'text' : 'number'}
                                     step="any"
-                                    min={result.rangeMin}
-                                    max={result.rangeMax}
                                     value={result.value || ''}
                                     onChange={(event) => updateResult(reportIndex, resultIndex, event.target.value)}
                                     className={`border rounded-lg px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm ${fieldError ? 'border-red-300 bg-red-50' : result.flag === 'H' ? 'border-red-300 bg-red-50' : result.flag === 'L' ? 'border-blue-300 bg-blue-50' : 'border-slate-200'}`}
