@@ -146,37 +146,6 @@ export default function Login() {
                   </button>
                 </form>
 
-                <div className="mt-8 rounded-[28px] border border-slate-200 bg-slate-50/90 p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Quick Access</p>
-                      <p className="mt-1 text-sm text-slate-600">Demo credentials for testing roles</p>
-                    </div>
-                    <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                      Secure Roles
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-                    {[
-                      { role: 'Admin', email: 'admin@dhanvantarilab.in', pass: 'Admin@2026' },
-                      { role: 'Reception', email: 'reception@dhanvantarilab.in', pass: 'Reception@2026' },
-                      { role: 'Dr. Rajesh', email: 'dr.rajesh@dhanvantarilab.in', pass: 'Rajesh@2026' },
-                      { role: 'Dr. Priya', email: 'dr.priya@dhanvantarilab.in', pass: 'Priya@2026' },
-                    ].map(cred => (
-                      <button
-                        key={cred.role}
-                        type="button"
-                        onClick={() => setForm({ email: cred.email, password: cred.pass })}
-                        className="rounded-2xl border border-slate-200 bg-white p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-                      >
-                        <p className="font-semibold text-slate-800">{cred.role}</p>
-                        <p className="mt-1 truncate text-slate-500">{cred.email}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 <p className="mt-8 text-center text-xs text-slate-500">
                   © 2024 PathLab Management System. All rights reserved.
                 </p>
