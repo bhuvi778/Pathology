@@ -164,15 +164,18 @@ export const exportReportToPDF = async (report, options = {}) => {
   }
 };
 
-export const printReport = (report) => {
+export const printReport = async (report, options = {}) => {
+  const { container, cleanup } = await renderReportToContainer(report, {
+    renderMode: 'print',
+    ...options,
+  });
+
   try {
-    const element = document.getElementById(`report-print-${report._id}`);
-    if (!element) {
-      console.error('Report element not found');
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) {
       return false;
     }
 
-    const printWindow = window.open('', '', 'width=800,height=600');
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -185,7 +188,7 @@ export const printReport = (report) => {
           </style>
         </head>
         <body>
-          ${element.innerHTML}
+          ${container.innerHTML}
           <script>
             window.print();
             setTimeout(() => window.close(), 250);
@@ -198,6 +201,8 @@ export const printReport = (report) => {
   } catch (error) {
     console.error('Error printing report:', error);
     return false;
+  } finally {
+    cleanup();
   }
 };
 

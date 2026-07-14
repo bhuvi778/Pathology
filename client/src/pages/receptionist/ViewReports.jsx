@@ -8,6 +8,8 @@ import ReportPrint from '../../components/reports/ReportPrint';
 import toast from 'react-hot-toast';
 import { shareReportViaWhatsAppNumber } from '../../utils/whatsapp';
 import { exportReportToPDF, printReport } from '../../utils/pdf';
+import TestSelectionModal from '../../components/reports/TestSelectionModal';
+import { buildSingleTestReport, getReportTests } from '../../utils/helpers';
 
 export default function ViewReports() {
   const [reports, setReports] = useState([]);
@@ -16,6 +18,7 @@ export default function ViewReports() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedReport, setSelectedReport] = useState(null);
   const [showPrintView, setShowPrintView] = useState(false);
+  const [selectionModal, setSelectionModal] = useState({ open: false, action: '', report: null });
 
   useEffect(() => {
     fetchReports();
@@ -45,9 +48,9 @@ export default function ViewReports() {
     );
   });
 
-  const shareOnWhatsApp = async (report) => {
+  const shareOnWhatsApp = async (reportData) => {
     try {
-      const result = await shareReportViaWhatsAppNumber(report, report.patient?.phone || '');
+      const result = await shareReportViaWhatsAppNumber(reportData, reportData.patient?.phone || '');
       if (result?.mode === 'native-share') {
         toast.success('WhatsApp share sheet opened with PDF attached');
       } else {
@@ -72,12 +75,43 @@ export default function ViewReports() {
     }
   };
 
-  const handlePrint = (report) => {
+  const handlePrint = async (reportData) => {
     try {
-      printReport(report);
+      await printReport(reportData);
     } catch (err) {
       toast.error('Error printing report');
     }
+  };
+
+  const startReportAction = async (report, action) => {
+    try {
+      const fullReportResponse = await api.get(`/reports/${report._id}`);
+      const fullReport = fullReportResponse.data;
+      const tests = getReportTests(fullReport);
+
+      if (tests.length <= 1) {
+        if (action === 'print') handlePrint(fullReport);
+        else await shareOnWhatsApp(fullReport);
+        return;
+      }
+
+      setSelectionModal({ open: true, action, report: fullReport });
+    } catch {
+      toast.error(action === 'print' ? 'Error printing report' : 'Could not prepare WhatsApp share');
+    }
+  };
+
+  const handleSelectionConfirm = async (selectedTestId) => {
+    const scopedReport = buildSingleTestReport(selectionModal.report, selectedTestId);
+    const selectedAction = selectionModal.action;
+    setSelectionModal({ open: false, action: '', report: null });
+
+    if (selectedAction === 'print') {
+      handlePrint(scopedReport);
+      return;
+    }
+
+    await shareOnWhatsApp(scopedReport);
   };
 
   if (loading) return <LoadingSpinner text="Loading reports..." />;
@@ -181,7 +215,7 @@ export default function ViewReports() {
                         View
                       </button>
                       <button
-                        onClick={() => handlePrint(report)}
+                        onClick={() => startReportAction(report, 'print')}
                         className="btn-secondary py-2 px-3 text-sm flex items-center gap-2"
                       >
                         <Printer className="w-4 h-4" />
@@ -195,7 +229,7 @@ export default function ViewReports() {
                         PDF
                       </button>
                       <button
-                        onClick={() => shareOnWhatsApp(report)}
+                        onClick={() => startReportAction(report, 'share')}
                         className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 text-sm rounded-lg flex items-center gap-2 transition-colors"
                       >
                         <Phone className="w-4 h-4" />
@@ -241,7 +275,7 @@ export default function ViewReports() {
                 Close
               </button>
               <button
-                onClick={() => handlePrint(selectedReport)}
+                onClick={() => startReportAction(selectedReport, 'print')}
                 className="btn-secondary flex items-center gap-2"
               >
                 <Printer className="w-4 h-4" />
@@ -255,7 +289,7 @@ export default function ViewReports() {
                 Download PDF
               </button>
               <button
-                onClick={() => shareOnWhatsApp(selectedReport)}
+                onClick={() => startReportAction(selectedReport, 'share')}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
               >
                 <Phone className="w-4 h-4" />
@@ -265,6 +299,14 @@ export default function ViewReports() {
           </div>
         </div>
       )}
+
+      <TestSelectionModal
+        open={selectionModal.open}
+        report={selectionModal.report}
+        actionLabel={selectionModal.action}
+        onClose={() => setSelectionModal({ open: false, action: '', report: null })}
+        onConfirm={handleSelectionConfirm}
+      />
     </div>
   );
 }

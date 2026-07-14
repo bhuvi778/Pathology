@@ -8,6 +8,9 @@ import ReportPrint from '../../components/reports/ReportPrint';
 import { useReactToPrint } from 'react-to-print';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import TestSelectionModal from '../../components/reports/TestSelectionModal';
+import { buildSingleTestReport, getReportTests } from '../../utils/helpers';
 
 export default function ViewReports() {
   const [reports, setReports] = useState([]);
@@ -16,6 +19,7 @@ export default function ViewReports() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [printData, setPrintData] = useState(null);
+  const [selectionModal, setSelectionModal] = useState({ open: false, report: null });
   const printRef = useRef();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -39,14 +43,31 @@ export default function ViewReports() {
 
   useEffect(() => { load(); }, [statusFilter, page, user]);
 
-  const doPrint = async (report) => {
+  const doPrint = (reportData) => {
+    setPrintData(reportData);
+    setTimeout(handlePrint, 100);
+  };
+
+  const startPrintAction = async (report) => {
     try {
       const fullReport = await api.get(`/reports/${report._id}`);
-      setPrintData(fullReport.data);
-      setTimeout(handlePrint, 100);
+      const reportData = fullReport.data;
+      const tests = getReportTests(reportData);
+      if (tests.length <= 1) {
+        doPrint(reportData);
+        return;
+      }
+
+      setSelectionModal({ open: true, report: reportData });
     } catch {
-      console.error('Could not load report for printing');
+      toast.error('Could not load report for printing');
     }
+  };
+
+  const handleSelectionConfirm = (selectedTestId) => {
+    const scopedReport = buildSingleTestReport(selectionModal.report, selectedTestId);
+    setSelectionModal({ open: false, report: null });
+    doPrint(scopedReport);
   };
 
   return (
@@ -94,7 +115,7 @@ export default function ViewReports() {
                   <td className="table-td">
                     <div className="flex items-center gap-1">
                       {(r.status === 'entered' || r.status === 'verified' || r.status === 'delivered') && (
-                        <button onClick={() => doPrint(r)} className="btn-secondary py-1 px-3 text-xs flex items-center gap-1">
+                        <button onClick={() => startPrintAction(r)} className="btn-secondary py-1 px-3 text-xs flex items-center gap-1">
                           <Printer className="w-3 h-3" /> Print
                         </button>
                       )}
@@ -118,6 +139,14 @@ export default function ViewReports() {
           {printData && <ReportPrint report={printData} appointment={printData.appointment} />}
         </div>
       </div>
+
+      <TestSelectionModal
+        open={selectionModal.open}
+        report={selectionModal.report}
+        actionLabel="print"
+        onClose={() => setSelectionModal({ open: false, report: null })}
+        onConfirm={handleSelectionConfirm}
+      />
 
       {total > 20 && (
         <div className="flex items-center justify-between">

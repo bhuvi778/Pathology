@@ -99,20 +99,37 @@ export const getFlagBadgeClass = (flag) => {
   return 'bg-slate-100 text-slate-500';
 };
 
-export const getReportTestNames = (report) => {
-  const tests = Array.isArray(report?.tests) && report.tests.length
-    ? report.tests
-    : report?.test
-      ? [report.test]
-      : [];
-
-  return tests.map((test) => test?.name).filter(Boolean);
+export const getReportTests = (report) => {
+  if (Array.isArray(report?.tests) && report.tests.length) return report.tests;
+  if (report?.test) return [report.test];
+  return [];
 };
+
+export const getReportTestNames = (report) => getReportTests(report).map((test) => test?.name).filter(Boolean);
 
 export const getReportTestLabel = (report) => {
   const names = getReportTestNames(report);
   if (!names.length) return 'No tests assigned';
   return names.join(', ');
+};
+
+export const buildSingleTestReport = (report, selectedTestId) => {
+  if (!report || !selectedTestId) return report;
+
+  const tests = getReportTests(report);
+  const selectedTest = tests.find((test) => String(test?._id || test) === String(selectedTestId));
+  if (!selectedTest) return report;
+
+  const filteredResults = (report.results || []).filter(
+    (result) => String(result.test || result.testId || '') === String(selectedTestId)
+  );
+
+  return {
+    ...report,
+    tests: [selectedTest],
+    test: selectedTest,
+    results: filteredResults,
+  };
 };
 
 export const groupReportResults = (report) => {

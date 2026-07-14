@@ -9,6 +9,8 @@ import { useReactToPrint } from 'react-to-print';
 import ReportPrint from '../../components/reports/ReportPrint';
 import toast from 'react-hot-toast';
 import { shareReportViaWhatsAppNumber } from '../../utils/whatsapp';
+import TestSelectionModal from '../../components/reports/TestSelectionModal';
+import { buildSingleTestReport, getReportTests } from '../../utils/helpers';
 
 export default function AllReports() {
   const [reports, setReports] = useState([]);
@@ -18,6 +20,7 @@ export default function AllReports() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [printData, setPrintData] = useState(null);
+  const [selectionModal, setSelectionModal] = useState({ open: false, action: '', report: null });
   const printRef = useRef();
   const navigate = useNavigate();
 
@@ -44,19 +47,14 @@ export default function AllReports() {
     load(statusFilter, 1, e.target.value);
   };
 
-  const doPrint = async (r) => {
-    try {
-      const res = await api.get(`/reports/${r._id}`);
-      setPrintData(res.data);
-      setTimeout(handlePrint, 100);
-    } catch {
-      toast.error('Could not load report for printing');
-    }
+  const doPrint = (reportData) => {
+    setPrintData(reportData);
+    setTimeout(handlePrint, 100);
   };
 
-  const shareOnWhatsApp = async (report) => {
+  const shareOnWhatsApp = async (reportData) => {
     try {
-      const result = await shareReportViaWhatsAppNumber(report, report.patient?.phone || '');
+      const result = await shareReportViaWhatsAppNumber(reportData, reportData.patient?.phone || '');
       if (result?.mode === 'native-share') {
         toast.success('WhatsApp share sheet opened with PDF attached');
       } else {
@@ -66,6 +64,37 @@ export default function AllReports() {
       if (error?.name === 'AbortError') return;
       toast.error('Could not prepare WhatsApp share');
     }
+  };
+
+  const startReportAction = async (report, action) => {
+    try {
+      const fullReportResponse = await api.get(`/reports/${report._id}`);
+      const fullReport = fullReportResponse.data;
+      const tests = getReportTests(fullReport);
+
+      if (tests.length <= 1) {
+        if (action === 'print') doPrint(fullReport);
+        else await shareOnWhatsApp(fullReport);
+        return;
+      }
+
+      setSelectionModal({ open: true, action, report: fullReport });
+    } catch {
+      toast.error(action === 'print' ? 'Could not load report for printing' : 'Could not prepare WhatsApp share');
+    }
+  };
+
+  const handleSelectionConfirm = async (selectedTestId) => {
+    const scopedReport = buildSingleTestReport(selectionModal.report, selectedTestId);
+    const selectedAction = selectionModal.action;
+    setSelectionModal({ open: false, action: '', report: null });
+
+    if (selectedAction === 'print') {
+      doPrint(scopedReport);
+      return;
+    }
+
+    await shareOnWhatsApp(scopedReport);
   };
 
   const markDelivered = async (r) => {
@@ -162,7 +191,7 @@ export default function AllReports() {
                       {/* Print — only for entered/verified/delivered */}
                       {['entered', 'verified', 'delivered'].includes(r.status) && (
                         <button
-                          onClick={() => doPrint(r)}
+                          onClick={() => startReportAction(r, 'print')}
                           title="Print Report"
                           className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 border border-slate-200"
                         >
@@ -172,7 +201,7 @@ export default function AllReports() {
                       {/* Share WhatsApp — only for verified/delivered reports */}
                       {['verified', 'delivered'].includes(r.status) && (
                         <button
-                          onClick={() => shareOnWhatsApp(r)}
+                          onClick={() => startReportAction(r, 'share')}
                           title="Share on WhatsApp"
                           className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 border border-green-100"
                         >
@@ -203,6 +232,14 @@ export default function AllReports() {
           {printData && <ReportPrint report={printData} appointment={printData.appointment} />}
         </div>
       </div>
+
+      <TestSelectionModal
+        open={selectionModal.open}
+        report={selectionModal.report}
+        actionLabel={selectionModal.action}
+        onClose={() => setSelectionModal({ open: false, action: '', report: null })}
+        onConfirm={handleSelectionConfirm}
+      />
 
       {total > 20 && (
         <div className="flex items-center justify-between">

@@ -7,10 +7,13 @@ import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import ReportPrint from '../../components/reports/ReportPrint';
+import TestSelectionModal from '../../components/reports/TestSelectionModal';
 import {
+  buildSingleTestReport,
   calculateFlag,
   formatDate,
   getFlagBadgeClass,
+  getReportTests,
   getReportTestLabel,
   groupReportResults,
   validateNumericResult,
@@ -26,6 +29,7 @@ export default function EnterResults({ title = 'Enter Test Results' }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
   const [printReport, setPrintReport] = useState(null);
+  const [selectionModal, setSelectionModal] = useState({ open: false, report: null });
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -34,7 +38,20 @@ export default function EnterResults({ title = 'Enter Test Results' }) {
   const handlePrint = useReactToPrint({ content: () => printRef.current });
 
   const doPrint = (report) => {
-    setPrintReport(report);
+    const tests = getReportTests(report);
+    if (tests.length <= 1) {
+      setPrintReport(report);
+      setTimeout(handlePrint, 100);
+      return;
+    }
+
+    setSelectionModal({ open: true, report });
+  };
+
+  const handleSelectionConfirm = (selectedTestId) => {
+    const scopedReport = buildSingleTestReport(selectionModal.report, selectedTestId);
+    setSelectionModal({ open: false, report: null });
+    setPrintReport(scopedReport);
     setTimeout(handlePrint, 100);
   };
 
@@ -356,6 +373,14 @@ export default function EnterResults({ title = 'Enter Test Results' }) {
           )}
         </div>
       </div>
+
+      <TestSelectionModal
+        open={selectionModal.open}
+        report={selectionModal.report}
+        actionLabel="print"
+        onClose={() => setSelectionModal({ open: false, report: null })}
+        onConfirm={handleSelectionConfirm}
+      />
     </div>
   );
 }
