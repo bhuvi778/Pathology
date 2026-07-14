@@ -69,7 +69,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
   const padding = reportLayout === 'compact' ? 12 : 20;
   const fontSize = reportLayout === 'compact' ? 11 : 12;
   const topPadding = isShareMode ? '32px' : '5cm';
-  const isPrintMode = renderMode === 'print';
+  const isPlainResultLayout = renderMode === 'print' || renderMode === 'share';
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: topPadding, maxWidth: '800px', margin: '0 auto', backgroundColor: '#fff' }}>
@@ -94,7 +94,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', padding: isPrintMode ? '0' : '10px 12px', backgroundColor: isPrintMode ? 'transparent' : '#f8fafc', border: isPrintMode ? 'none' : '1px solid #e2e8f0', borderRadius: '6px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', padding: isPlainResultLayout ? '0' : '10px 12px', backgroundColor: isPlainResultLayout ? 'transparent' : '#f8fafc', border: isPlainResultLayout ? 'none' : '1px solid #e2e8f0', borderRadius: '6px' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Patient:</span>
           <span>{patient?.name}</span>
@@ -131,7 +131,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
 
       {groupedResults.length > 0 ? groupedResults.map((section) => (
         <div key={String(section.test?._id || section.testId)} style={{ marginBottom: '18px' }}>
-          <div style={{ marginBottom: '8px', padding: isPrintMode ? '0 0 4px' : '8px 10px', backgroundColor: isPrintMode ? 'transparent' : '#e2e8f0', borderRadius: '6px', borderBottom: isPrintMode ? '1px solid #111827' : 'none', fontWeight: '700', color: '#111827' }}>
+          <div style={{ marginBottom: '8px', padding: isPlainResultLayout ? '0 0 4px' : '8px 10px', backgroundColor: isPlainResultLayout ? 'transparent' : '#e2e8f0', borderRadius: '6px', borderBottom: isPlainResultLayout ? '1px solid #111827' : 'none', fontWeight: '700', color: '#111827' }}>
             {section.test?.name}
             <span style={{ fontWeight: '400', marginLeft: '8px', color: '#475569', fontSize: '11px' }}>
               {section.test?.sampleType || 'Sample not set'}
@@ -139,7 +139,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ backgroundColor: 'transparent', color: '#111827', borderBottom: isPrintMode ? '1px solid #9ca3af' : '1px solid #e5e7eb' }}>
+              <tr style={{ backgroundColor: 'transparent', color: '#111827', borderBottom: isPlainResultLayout ? '1px solid #9ca3af' : '1px solid #e5e7eb' }}>
                 <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: '700', fontSize: '11px' }}>Parameter</th>
                 <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '100px' }}>Result</th>
                 <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '80px' }}>Unit</th>
@@ -149,7 +149,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
             </thead>
             <tbody>
               {section.results.map((result, index) => (
-                <tr key={`${String(result.test || '')}-${result.parameterName}`} style={{ backgroundColor: 'transparent', borderBottom: isPrintMode ? 'none' : '1px solid #e2e8f0' }}>
+                <tr key={`${String(result.test || '')}-${result.parameterName}`} style={{ backgroundColor: 'transparent', borderBottom: isPlainResultLayout ? 'none' : '1px solid #e2e8f0' }}>
                   <td style={{ padding: '7px 10px', fontWeight: '500' }}>{result.parameterName}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: '13px', ...getResultValueStyle(result.flag) }}>
                     {result.value || '—'}
