@@ -178,12 +178,6 @@ const validateReportResults = (results = []) => {
     if (!Number.isFinite(numericValue)) {
       return `${result.parameterName} must be a valid number.`;
     }
-    if (result.rangeMin !== undefined && numericValue < result.rangeMin) {
-      return `${result.parameterName} must be at least ${result.rangeMin}.`;
-    }
-    if (result.rangeMax !== undefined && numericValue > result.rangeMax) {
-      return `${result.parameterName} must be at most ${result.rangeMax}.`;
-    }
   }
 
   return null;
