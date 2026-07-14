@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { FlaskConical, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
+const LAB_BACKGROUND = 'https://images.unsplash.com/photo-1579165466741-7f35e4755660?auto=format&fit=crop&w=1600&q=80';
+
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -28,99 +30,160 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-            <FlaskConical className="w-9 h-9 text-primary-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-white">PathLab</h1>
-          <p className="text-primary-200 mt-1">Pathology Lab Management System</p>
-        </div>
+    <div className="relative min-h-screen overflow-hidden bg-slate-950">
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
+        style={{ backgroundImage: `url(${LAB_BACKGROUND})` }}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(2,6,23,0.92),rgba(15,23,42,0.78),rgba(8,47,73,0.62))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.12),transparent_28%)]" />
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-xl font-bold text-slate-800 mb-1">Sign In</h2>
-          <p className="text-sm text-slate-500 mb-6">Enter your credentials to access the system</p>
+      <div className="relative z-10 min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center">
+          <div className="grid w-full overflow-hidden rounded-[32px] border border-white/15 bg-white/10 shadow-[0_30px_80px_rgba(15,23,42,0.45)] backdrop-blur-sm lg:grid-cols-[1.15fr_0.85fr]">
+            <section className="relative hidden min-h-[720px] overflow-hidden lg:flex">
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.05),rgba(15,23,42,0.7))]" />
+              <div className="relative flex w-full flex-col justify-between p-10 xl:p-14">
+                <div>
+                  <div className="inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium tracking-[0.2em] text-slate-100 uppercase">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary-700 shadow-lg shadow-slate-900/20">
+                      <FlaskConical className="h-5 w-5" />
+                    </div>
+                    PathLab
+                  </div>
+                  <div className="mt-14 max-w-xl">
+                    <p className="text-sm font-medium uppercase tracking-[0.35em] text-sky-200/90">Diagnostic Operations</p>
+                    <h1 className="mt-5 text-5xl font-semibold leading-tight text-white xl:text-6xl">
+                      Modern access for a high-precision pathology workflow.
+                    </h1>
+                    <p className="mt-6 max-w-lg text-base leading-7 text-slate-200/90 xl:text-lg">
+                      Secure sign-in for reporting, patient intake, billing, and lab coordination in one professional workspace.
+                    </p>
+                  </div>
+                </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="label">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  className="input-field pl-10"
-                  placeholder="Enter your email"
-                  autoComplete="email"
-                />
+                <div className="grid gap-4 md:grid-cols-3">
+                  {[
+                    { value: '24/7', label: 'Access control across lab roles' },
+                    { value: 'Fast', label: 'Operational flow from sample to report' },
+                    { value: 'Secure', label: 'Credential-based professional login' },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+                      <p className="text-2xl font-semibold text-white">{item.value}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-200/85">{item.label}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </section>
 
-            <div>
-              <label className="label">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={form.password}
-                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                  className="input-field pl-10 pr-10"
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+            <section className="relative bg-white/95 p-6 sm:p-8 lg:p-10 xl:p-12">
+              <div className="mx-auto flex h-full w-full max-w-md flex-col justify-center">
+                <div className="mb-8 lg:hidden">
+                  <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-900/20">
+                      <FlaskConical className="h-5 w-5" />
+                    </div>
+                    PathLab
+                  </div>
+                </div>
+
+                <div className="mb-8">
+                  <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary-700">Welcome Back</p>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Sign in to continue</h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Access the pathology lab management system with your assigned credentials.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <label className="label text-slate-600">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="email"
+                        required
+                        value={form.email}
+                        onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                        className="input-field rounded-2xl border-slate-200 bg-white/90 py-3 pl-11 pr-4 shadow-sm focus:border-primary-500"
+                        placeholder="Enter your email"
+                        autoComplete="email"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="label text-slate-600">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={form.password}
+                        onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                        className="input-field rounded-2xl border-slate-200 bg-white/90 py-3 pl-11 pr-11 shadow-sm focus:border-primary-500"
+                        placeholder="Enter your password"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={loading} className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-base font-medium text-white transition-colors duration-200 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
+                        Signing In...
+                      </span>
+                    ) : 'Sign In'}
+                  </button>
+                </form>
+
+                <div className="mt-8 rounded-[28px] border border-slate-200 bg-slate-50/90 p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Quick Access</p>
+                      <p className="mt-1 text-sm text-slate-600">Demo credentials for testing roles</p>
+                    </div>
+                    <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      Secure Roles
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                    {[
+                      { role: 'Admin', email: 'admin@dhanvantarilab.in', pass: 'Admin@2026' },
+                      { role: 'Reception', email: 'reception@dhanvantarilab.in', pass: 'Reception@2026' },
+                      { role: 'Dr. Rajesh', email: 'dr.rajesh@dhanvantarilab.in', pass: 'Rajesh@2026' },
+                      { role: 'Dr. Priya', email: 'dr.priya@dhanvantarilab.in', pass: 'Priya@2026' },
+                    ].map(cred => (
+                      <button
+                        key={cred.role}
+                        type="button"
+                        onClick={() => setForm({ email: cred.email, password: cred.pass })}
+                        className="rounded-2xl border border-slate-200 bg-white p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                      >
+                        <p className="font-semibold text-slate-800">{cred.role}</p>
+                        <p className="mt-1 truncate text-slate-500">{cred.email}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <p className="mt-8 text-center text-xs text-slate-500">
+                  © 2024 PathLab Management System. All rights reserved.
+                </p>
               </div>
-            </div>
-
-            <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 text-base">
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  Signing In...
-                </span>
-              ) : 'Sign In'}
-            </button>
-          </form>
-
-          {/* Demo credentials */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <p className="text-xs text-slate-500 text-center mb-3 font-medium">Demo Credentials</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {[
-                { role: 'Admin', email: 'admin@dhanvantarilab.in', pass: 'Admin@2026' },
-                { role: 'Reception', email: 'reception@dhanvantarilab.in', pass: 'Reception@2026' },
-                { role: 'Dr. Rajesh', email: 'dr.rajesh@dhanvantarilab.in', pass: 'Rajesh@2026' },
-                { role: 'Dr. Priya', email: 'dr.priya@dhanvantarilab.in', pass: 'Priya@2026' },
-              ].map(cred => (
-                <button
-                  key={cred.role}
-                  type="button"
-                  onClick={() => setForm({ email: cred.email, password: cred.pass })}
-                  className="p-2 rounded-lg border border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition-colors text-center"
-                >
-                  <p className="font-semibold text-slate-700">{cred.role}</p>
-                  <p className="text-slate-400 truncate">{cred.email}</p>
-                </button>
-              ))}
-            </div>
+            </section>
           </div>
         </div>
-
-        <p className="text-center text-primary-300 text-xs mt-6">
-          © 2024 PathLab Management System. All rights reserved.
-        </p>
       </div>
     </div>
   );
