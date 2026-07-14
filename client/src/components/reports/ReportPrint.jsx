@@ -3,11 +3,17 @@ import api from '../../utils/api';
 import { formatDate, getReportTestLabel, groupReportResults } from '../../utils/helpers';
 
 function getFlagDisplay(flag) {
-  if (flag === 'H') return <span style={{ color: '#dc2626', fontWeight: 'bold' }}>H</span>;
-  if (flag === 'L') return <span style={{ color: '#2563eb', fontWeight: 'bold' }}>L</span>;
-  if (flag === 'C') return <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>C</span>;
-  if (flag === 'N') return <span style={{ color: '#059669', fontWeight: 'bold' }}>N</span>;
+  if (flag === 'H' || flag === 'C') return <span style={{ color: '#000000', fontWeight: '700' }}>{flag}</span>;
+  if (flag === 'N') return <span style={{ color: '#1f2937', fontWeight: '600' }}>N</span>;
+  if (flag === 'L') return <span style={{ color: '#6b7280', fontWeight: '600' }}>L</span>;
   return null;
+}
+
+function getResultValueStyle(flag) {
+  if (flag === 'H' || flag === 'C') return { color: '#000000', fontWeight: '700' };
+  if (flag === 'N') return { color: '#1f2937', fontWeight: '600' };
+  if (flag === 'L') return { color: '#6b7280', fontWeight: '600' };
+  return { color: '#111827', fontWeight: '600' };
 }
 
 const resolveAssetUrl = (url) => {
@@ -63,6 +69,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
   const padding = reportLayout === 'compact' ? 12 : 20;
   const fontSize = reportLayout === 'compact' ? 11 : 12;
   const topPadding = isShareMode ? '32px' : '5cm';
+  const isPrintMode = renderMode === 'print';
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: topPadding, maxWidth: '800px', margin: '0 auto', backgroundColor: '#fff' }}>
@@ -87,7 +94,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', padding: '10px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', padding: isPrintMode ? '0' : '10px 12px', backgroundColor: isPrintMode ? 'transparent' : '#f8fafc', border: isPrintMode ? 'none' : '1px solid #e2e8f0', borderRadius: '6px' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Patient:</span>
           <span>{patient?.name}</span>
@@ -124,7 +131,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
 
       {groupedResults.length > 0 ? groupedResults.map((section) => (
         <div key={String(section.test?._id || section.testId)} style={{ marginBottom: '18px' }}>
-          <div style={{ marginBottom: '8px', padding: '8px 10px', backgroundColor: '#e2e8f0', borderRadius: '6px', fontWeight: '700', color: '#1e293b' }}>
+          <div style={{ marginBottom: '8px', padding: isPrintMode ? '0 0 4px' : '8px 10px', backgroundColor: isPrintMode ? 'transparent' : '#e2e8f0', borderRadius: '6px', borderBottom: isPrintMode ? '1px solid #111827' : 'none', fontWeight: '700', color: '#111827' }}>
             {section.test?.name}
             <span style={{ fontWeight: '400', marginLeft: '8px', color: '#475569', fontSize: '11px' }}>
               {section.test?.sampleType || 'Sample not set'}
@@ -132,19 +139,19 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ backgroundColor: '#2563eb', color: '#fff' }}>
-                <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 'bold', fontSize: '11px' }}>Parameter</th>
-                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', width: '100px' }}>Result</th>
-                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', width: '80px' }}>Unit</th>
-                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', width: '160px' }}>Reference Range</th>
-                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '11px', width: '50px' }}>Flag</th>
+              <tr style={{ backgroundColor: 'transparent', color: '#111827', borderBottom: isPrintMode ? '1px solid #9ca3af' : '1px solid #e5e7eb' }}>
+                <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: '700', fontSize: '11px' }}>Parameter</th>
+                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '100px' }}>Result</th>
+                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '80px' }}>Unit</th>
+                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '160px' }}>Reference Range</th>
+                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '50px' }}>Flag</th>
               </tr>
             </thead>
             <tbody>
               {section.results.map((result, index) => (
-                <tr key={`${String(result.test || '')}-${result.parameterName}`} style={{ backgroundColor: index % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <tr key={`${String(result.test || '')}-${result.parameterName}`} style={{ backgroundColor: 'transparent', borderBottom: isPrintMode ? 'none' : '1px solid #e2e8f0' }}>
                   <td style={{ padding: '7px 10px', fontWeight: '500' }}>{result.parameterName}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 'bold', fontSize: '13px', color: result.flag === 'H' ? '#dc2626' : result.flag === 'L' ? '#2563eb' : result.flag === 'N' ? '#059669' : '#000' }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: '13px', ...getResultValueStyle(result.flag) }}>
                     {result.value || '—'}
                   </td>
                   <td style={{ padding: '7px 10px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.unit || '—'}</td>

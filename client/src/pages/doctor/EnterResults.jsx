@@ -12,7 +12,6 @@ import {
   buildSingleTestReport,
   calculateFlag,
   formatDate,
-  getFlagBadgeClass,
   getReportTests,
   getReportTestLabel,
   groupReportResults,
@@ -20,6 +19,21 @@ import {
 } from '../../utils/helpers';
 
 const getErrorKey = (reportId, resultIndex) => `${reportId}-${resultIndex}`;
+
+const getResultToneClass = (flag, hasError = false) => {
+  if (hasError) return 'border-red-300 bg-red-50 text-red-700';
+  if (flag === 'H' || flag === 'C') return 'border-slate-900 bg-white text-black font-semibold';
+  if (flag === 'N') return 'border-slate-300 bg-white text-slate-800';
+  if (flag === 'L') return 'border-slate-300 bg-slate-50 text-slate-500';
+  return 'border-slate-200 bg-white text-slate-800';
+};
+
+const getFlagToneClass = (flag) => {
+  if (flag === 'H' || flag === 'C') return 'text-black bg-slate-200';
+  if (flag === 'N') return 'text-slate-800 bg-slate-100';
+  if (flag === 'L') return 'text-slate-500 bg-slate-100';
+  return 'text-slate-700 bg-slate-100';
+};
 
 export default function EnterResults({ title = 'Enter Test Results' }) {
   const { appointmentId } = useParams();
@@ -281,7 +295,7 @@ export default function EnterResults({ title = 'Enter Test Results' }) {
                                     step="any"
                                     value={result.value || ''}
                                     onChange={(event) => updateResult(reportIndex, resultIndex, event.target.value)}
-                                    className={`border rounded-lg px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm ${fieldError ? 'border-red-300 bg-red-50' : result.flag === 'H' ? 'border-red-300 bg-red-50' : result.flag === 'L' ? 'border-blue-300 bg-blue-50' : 'border-slate-200'}`}
+                                    className={`border rounded-lg px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm ${getResultToneClass(result.flag, Boolean(fieldError))}`}
                                     disabled={report.status === 'verified'}
                                   />
                                 )}
@@ -291,7 +305,7 @@ export default function EnterResults({ title = 'Enter Test Results' }) {
                               <td className="p-3 text-slate-500 text-xs">{result.normalRange || '—'}</td>
                               <td className="p-3">
                                 {result.flag && (
-                                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${getFlagBadgeClass(result.flag)}`}>
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${getFlagToneClass(result.flag)}`}>
                                     {result.flag}
                                   </span>
                                 )}
