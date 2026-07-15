@@ -69,7 +69,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
   const reportLayout = resolvedSettings.reportLayout || 'standard';
   const padding = reportLayout === 'compact' ? 12 : 20;
   const fontSize = reportLayout === 'compact' ? 11 : 12;
-  const topPadding = isPrintMode ? '14px' : isShareMode ? '32px' : '5cm';
+  const topPadding = isPrintMode ? '5cm' : isShareMode ? '32px' : '5cm';
   const isPlainResultLayout = renderMode === 'print' || renderMode === 'share';
   const sectionDividerColor = isPrintMode ? '#9ca3af' : '#111827';
 
