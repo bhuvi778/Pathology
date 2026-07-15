@@ -32,6 +32,77 @@ const resolveAssetUrl = (url) => {
   }
 };
 
+const normalizeText = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+const isSerumUricAcidClassicReport = (groupedResults = []) => {
+  if (groupedResults.length !== 1) return false;
+  const section = groupedResults[0] || {};
+  const testName = normalizeText(section?.test?.name);
+  return testName === 'serum uric acid';
+};
+
+function SerumUricAcidClassicPrint({ report, patient, section }) {
+  const firstResult = section?.results?.[0] || {};
+  const reportDate = formatDate(report?.reportDate || new Date(), 'dd/MM/yyyy');
+  const registeredDate = formatDate(report?.appointment?.appointmentDate || report?.reportDate || new Date(), 'dd/MM/yyyy');
+  const receivedDate = formatDate(report?.reportDate || new Date(), 'dd/MM/yyyy');
+
+  return (
+    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000', padding: '18px 20px', paddingTop: '5cm', maxWidth: '860px', margin: '0 auto', backgroundColor: '#fff' }}>
+      <div style={{ border: '1px solid #d1d5db' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px', gap: '12px', padding: '14px 16px', borderBottom: '1px solid #d1d5db' }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '700', letterSpacing: '0.3px' }}>{patient?.name || 'Patient'}</div>
+            <div style={{ marginTop: '4px', fontSize: '12px' }}>Age / Sex &nbsp;&nbsp; : {patient?.age} YRS / {String(patient?.gender || '').toUpperCase()}</div>
+            <div style={{ marginTop: '3px', fontSize: '12px' }}>Referred by &nbsp; : {report?.doctor?.name || '-'}</div>
+            <div style={{ marginTop: '3px', fontSize: '12px' }}>Reg. no. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : <strong>{patient?.patientId || '-'}</strong></div>
+          </div>
+
+          <div style={{ paddingLeft: '8px', borderLeft: '1px solid #e5e7eb' }}>
+            <div style={{ fontFamily: 'monospace', fontWeight: '700', letterSpacing: '2px', marginBottom: '8px' }}>{report?.reportId || '-'}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '92px 1fr', rowGap: '3px', fontSize: '12px' }}>
+              <span>Registered on</span><span>: {registeredDate}</span>
+              <span>Received on</span><span>: {receivedDate}</span>
+              <span>Reported on</span><span>: {reportDate}</span>
+            </div>
+          </div>
+
+          <div style={{ border: '1px solid #d1d5db', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', fontSize: '11px' }}>
+            QR
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'center', padding: '6px 8px', borderBottom: '1px solid #d1d5db', fontWeight: '700', letterSpacing: '0.8px' }}>* BIOCHEMISTRY</div>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ borderBottom: '1px solid #d1d5db', borderRight: '1px solid #e5e7eb', padding: '8px', textAlign: 'left', width: '45%' }}>TEST</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', borderRight: '1px solid #e5e7eb', padding: '8px', textAlign: 'center', width: '15%' }}>VALUE</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', borderRight: '1px solid #e5e7eb', padding: '8px', textAlign: 'center', width: '15%' }}>UNIT</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', padding: '8px', textAlign: 'center', width: '25%' }}>REFERENCE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style={{ borderBottom: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb', padding: '8px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', letterSpacing: '0.5px' }}>{String(firstResult.parameterName || section?.test?.name || 'SERUM URIC ACID').toUpperCase()}</div>
+                <div style={{ marginTop: '5px', color: '#4b5563', fontSize: '11px' }}>Method: Uricase</div>
+                <div style={{ marginTop: '2px', color: '#4b5563', fontSize: '11px' }}>Instrument: Biochemistry Analyser</div>
+              </td>
+              <td style={{ borderBottom: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb', padding: '8px', textAlign: 'center', fontWeight: '700' }}>{firstResult.value || '-'}</td>
+              <td style={{ borderBottom: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb', padding: '8px', textAlign: 'center' }}>{firstResult.unit || 'mg/dl'}</td>
+              <td style={{ borderBottom: '1px solid #e5e7eb', padding: '8px', textAlign: 'center' }}>{firstResult.normalRange || '-'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ marginTop: '18px', textAlign: 'center', fontSize: '11px', color: '#4b5563' }}>---- End of report ----</div>
+    </div>
+  );
+}
+
 export default function ReportPrint({ report, appointment, renderMode = 'print', labSettingsOverride }) {
   const patient = report?.patient || appointment?.patient;
   const groupedResults = groupReportResults(report);
@@ -72,6 +143,10 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
   const topPadding = isPrintMode ? '5cm' : isShareMode ? '32px' : '5cm';
   const isPlainResultLayout = renderMode === 'print' || renderMode === 'share';
   const sectionDividerColor = isPrintMode ? '#9ca3af' : '#111827';
+
+  if (isPrintMode && isSerumUricAcidClassicReport(groupedResults)) {
+    return <SerumUricAcidClassicPrint report={report} patient={patient} section={groupedResults[0]} />;
+  }
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: topPadding, maxWidth: '800px', margin: '0 auto', backgroundColor: '#fff' }}>

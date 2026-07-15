@@ -98,6 +98,18 @@ const tests = [
     ],
   },
   {
+    name: 'Serum Uric Acid',
+    shortName: 'SUA',
+    category: 'biochemistry',
+    price: 250,
+    turnaroundTime: '1 hour',
+    sampleType: 'Serum',
+    description: 'Method: Uricase; Instrument: Biochemistry Analyser',
+    parameters: [
+      { name: 'Serum Uric Acid', unit: 'mg/dL', normalRange: { general: { min: 2.7, max: 6.5, text: '2.7 - 6.5' } } },
+    ],
+  },
+  {
     name: 'Glycated Hemoglobin (HbA1c)',
     shortName: 'HbA1c',
     category: 'biochemistry',
