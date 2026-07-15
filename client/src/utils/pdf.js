@@ -182,13 +182,33 @@ export const printReport = async (report, options = {}) => {
         <head>
           <title>Report-${report.reportId}</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background: #fff; }
-            @media print { body { margin: 0; padding: 10px; } }
+            @page { size: auto; margin: 10mm; }
+            html, body { margin: 0; padding: 0; background: #fff !important; }
+            body { font-family: Arial, sans-serif; }
+            .report-print-root,
+            .report-print-root * {
+              background-image: none !important;
+              box-shadow: none !important;
+              text-shadow: none !important;
+            }
+            @media print {
+              html, body {
+                margin: 0;
+                padding: 0;
+                background: #fff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .report-print-root {
+                margin: 0;
+                padding: 0;
+              }
+            }
             * { box-sizing: border-box; }
           </style>
         </head>
         <body>
-          ${container.innerHTML}
+          <div class="report-print-root">${container.innerHTML}</div>
           <script>
             window.print();
             setTimeout(() => window.close(), 250);

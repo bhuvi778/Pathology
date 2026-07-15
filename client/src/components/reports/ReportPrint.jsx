@@ -62,14 +62,16 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
   }), [labSettings]);
 
   const isShareMode = renderMode === 'share';
+  const isPrintMode = renderMode === 'print';
   const includeHeader = isShareMode && Boolean(resolvedSettings.reportHeader || resolvedSettings.labName);
   const includeFooter = resolvedSettings.includeFooter !== false;
   const showSignature = isShareMode && Boolean(resolvedSettings.doctorSignature);
   const reportLayout = resolvedSettings.reportLayout || 'standard';
   const padding = reportLayout === 'compact' ? 12 : 20;
   const fontSize = reportLayout === 'compact' ? 11 : 12;
-  const topPadding = isShareMode ? '32px' : '5cm';
+  const topPadding = isPrintMode ? '14px' : isShareMode ? '32px' : '5cm';
   const isPlainResultLayout = renderMode === 'print' || renderMode === 'share';
+  const sectionDividerColor = isPrintMode ? '#9ca3af' : '#111827';
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', fontSize: `${fontSize}px`, color: '#000', padding: `${padding}px`, paddingTop: topPadding, maxWidth: '800px', margin: '0 auto', backgroundColor: '#fff' }}>
@@ -94,7 +96,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', padding: isPlainResultLayout ? '0' : '10px 12px', backgroundColor: isPlainResultLayout ? 'transparent' : '#f8fafc', border: isPlainResultLayout ? 'none' : '1px solid #e2e8f0', borderRadius: '6px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', padding: isPlainResultLayout ? '0 0 8px' : '10px 12px', backgroundColor: isPlainResultLayout ? 'transparent' : '#f8fafc', border: isPlainResultLayout ? 'none' : '1px solid #e2e8f0', borderBottom: isPrintMode ? '1px solid #d1d5db' : 'none', borderRadius: '6px' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Patient:</span>
           <span>{patient?.name}</span>
@@ -131,7 +133,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
 
       {groupedResults.length > 0 ? groupedResults.map((section) => (
         <div key={String(section.test?._id || section.testId)} style={{ marginBottom: '18px' }}>
-          <div style={{ marginBottom: '8px', padding: isPlainResultLayout ? '0 0 4px' : '8px 10px', backgroundColor: isPlainResultLayout ? 'transparent' : '#e2e8f0', borderRadius: '6px', borderBottom: isPlainResultLayout ? '1px solid #111827' : 'none', fontWeight: '700', color: '#111827' }}>
+          <div style={{ marginBottom: '8px', padding: isPlainResultLayout ? '0 0 4px' : '8px 10px', backgroundColor: isPlainResultLayout ? 'transparent' : '#e2e8f0', borderRadius: '6px', borderBottom: isPlainResultLayout ? `1px solid ${sectionDividerColor}` : 'none', fontWeight: '700', color: '#111827' }}>
             {section.test?.name}
             <span style={{ fontWeight: '400', marginLeft: '8px', color: '#475569', fontSize: '11px' }}>
               {section.test?.sampleType || 'Sample not set'}
@@ -167,7 +169,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
       )}
 
       {report?.remarks && (
-        <div style={{ marginBottom: '16px', padding: '10px 12px', backgroundColor: '#fefce8', border: '1px solid #fef08a', borderRadius: '6px' }}>
+        <div style={{ marginBottom: '16px', padding: '10px 12px', backgroundColor: isPrintMode ? 'transparent' : '#fefce8', border: isPrintMode ? '1px solid #d1d5db' : '1px solid #fef08a', borderRadius: '6px' }}>
           <p style={{ fontWeight: 'bold', marginBottom: '4px', color: '#713f12' }}>Remarks:</p>
           <p style={{ color: '#374151', whiteSpace: 'pre-line' }}>{report.remarks}</p>
         </div>
