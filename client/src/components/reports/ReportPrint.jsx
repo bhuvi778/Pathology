@@ -4,18 +4,9 @@ import { formatDate, getReportTestLabel, groupReportResults } from '../../utils/
 
 const SCREEN_BREAKPOINT = 640;
 
-function getFlagDisplay(flag) {
-  if (flag === 'H' || flag === 'C') return <span style={{ color: '#000000', fontWeight: '700' }}>{flag}</span>;
-  if (flag === 'N') return <span style={{ color: '#1f2937', fontWeight: '600' }}>N</span>;
-  if (flag === 'L') return <span style={{ color: '#6b7280', fontWeight: '600' }}>L</span>;
-  return null;
-}
-
 function getResultValueStyle(flag) {
-  if (flag === 'H' || flag === 'C') return { color: '#000000', fontWeight: '700' };
-  if (flag === 'N') return { color: '#1f2937', fontWeight: '600' };
-  if (flag === 'L') return { color: '#6b7280', fontWeight: '600' };
-  return { color: '#111827', fontWeight: '600' };
+  if (flag === 'H') return { color: '#000000', fontWeight: '700' };
+  return { color: '#111827', fontWeight: '400' };
 }
 
 const resolveAssetUrl = (url) => {
@@ -76,6 +67,12 @@ const formatClassicValue = (result, fallback = '-') => {
   if (!result?.value) return fallback;
   return result.unit ? `${result.value} ${result.unit}` : result.value;
 };
+
+const getClassicValueStyle = (flag) => (
+  flag === 'H'
+    ? { color: '#000000', fontWeight: '700' }
+    : { color: '#111827', fontWeight: '400' }
+);
 
 function CbcClassicPrint({ report, patient, section, renderMode }) {
   const isPrintLike = renderMode === 'print' || renderMode === 'share';
@@ -144,7 +141,7 @@ function CbcClassicPrint({ report, patient, section, renderMode }) {
                     <div style={{ marginTop: '4px', fontSize: '11px', color: '#374151' }}>Method: Electrical Impedance & Microscopy</div>
                     <div style={{ marginTop: '2px', fontSize: '11px', color: '#374151' }}>Instrument: Microscopy/Hematology Analyser</div>
                   </div>
-                  <div style={{ fontWeight: '700', textAlign: isMobile ? 'left' : 'center' }}>{plateletResult?.value || '-'}</div>
+                  <div style={{ textAlign: isMobile ? 'left' : 'center', ...getClassicValueStyle(plateletResult?.flag) }}>{plateletResult?.value || '-'}</div>
                   <div style={{ textAlign: isMobile ? 'left' : 'center' }}>{plateletResult?.unit || 'lakhs/cumm'}</div>
                   <div style={{ textAlign: isMobile ? 'left' : 'center' }}>{plateletResult?.normalRange || '1.5 - 4.5'}</div>
                 </div>
@@ -172,7 +169,7 @@ function CbcClassicPrint({ report, patient, section, renderMode }) {
             ) : '—'
           ), { noMargin: true, labelWidth: '48px' })}
 
-          {detailRow('WBC', formatClassicValue(wbcResult), { labelWidth: '48px' })}
+          {detailRow('WBC', <span style={getClassicValueStyle(wbcResult?.flag)}>{formatClassicValue(wbcResult)}</span>, { labelWidth: '48px' })}
 
           <div style={{ marginTop: '10px' }}>
             <div style={{ fontWeight: '700', marginBottom: '6px' }}>DLC</div>
@@ -185,7 +182,7 @@ function CbcClassicPrint({ report, patient, section, renderMode }) {
             </div>
           </div>
 
-          {detailRow('PLATELETS', formatClassicValue(plateletResult), { labelWidth: '88px' })}
+          {detailRow('PLATELETS', <span style={getClassicValueStyle(plateletResult?.flag)}>{formatClassicValue(plateletResult)}</span>, { labelWidth: '88px' })}
           {detailRow('HAEMOPARASITES', haemoparasitesResult?.value || 'Not seen', { labelWidth: '132px' })}
           {detailRow('OPINION', opinionResult?.value || report?.remarks || '-', { labelWidth: '88px' })}
         </div>
@@ -243,7 +240,7 @@ function SerumUricAcidClassicPrint({ report, patient, section }) {
                 <div style={{ marginTop: '5px', color: '#4b5563', fontSize: '11px' }}>Method: Uricase</div>
                 <div style={{ marginTop: '2px', color: '#4b5563', fontSize: '11px' }}>Instrument: Biochemistry Analyser</div>
               </td>
-              <td style={{ borderBottom: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb', padding: '8px', textAlign: 'center', fontWeight: '700' }}>{firstResult.value || '-'}</td>
+              <td style={{ borderBottom: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb', padding: '8px', textAlign: 'center', ...getClassicValueStyle(firstResult.flag) }}>{firstResult.value || '-'}</td>
               <td style={{ borderBottom: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb', padding: '8px', textAlign: 'center' }}>{firstResult.unit || 'mg/dl'}</td>
               <td style={{ borderBottom: '1px solid #e5e7eb', padding: '8px', textAlign: 'center' }}>{firstResult.normalRange || '-'}</td>
             </tr>
@@ -387,26 +384,24 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
             </span>
           </div>
           <div style={{ overflowX: isCompactScreen ? 'auto' : 'visible' }}>
-          <table style={{ width: '100%', minWidth: isCompactScreen ? '560px' : '100%', borderCollapse: 'collapse' }}>
+          <table style={{ width: '100%', minWidth: isCompactScreen ? '500px' : '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
             <thead>
               <tr style={{ backgroundColor: 'transparent', color: '#111827', borderBottom: isPlainResultLayout ? '1px solid #9ca3af' : '1px solid #e5e7eb' }}>
                 <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: '700', fontSize: '11px' }}>Parameter</th>
-                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '100px' }}>Result</th>
-                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '80px' }}>Unit</th>
-                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '160px' }}>Reference Range</th>
-                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '50px' }}>Flag</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '82px' }}>Result</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '70px' }}>Unit</th>
+                <th style={{ padding: '8px 6px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '132px' }}>Reference Range</th>
               </tr>
             </thead>
             <tbody>
               {section.results.map((result, index) => (
                 <tr key={`${String(result.test || '')}-${result.parameterName}`} style={{ backgroundColor: 'transparent', borderBottom: isPlainResultLayout ? 'none' : '1px solid #e2e8f0' }}>
                   <td style={{ padding: '7px 10px', fontWeight: '500' }}>{result.parameterName}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: '13px', ...getResultValueStyle(result.flag) }}>
+                  <td style={{ padding: '7px 6px', textAlign: 'center', fontSize: '13px', ...getResultValueStyle(result.flag) }}>
                     {result.value || '—'}
                   </td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.unit || '—'}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.normalRange || '—'}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'center' }}>{getFlagDisplay(result.flag)}</td>
+                  <td style={{ padding: '7px 6px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.unit || '—'}</td>
+                  <td style={{ padding: '7px 6px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.normalRange || '—'}</td>
                 </tr>
               ))}
             </tbody>
