@@ -251,10 +251,10 @@ export default function ViewReports() {
 
       {/* Report Preview Modal */}
       {showPrintView && selectedReport && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl m-4 w-full max-w-4xl">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-800">Report Preview</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto p-3 sm:p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-auto my-4 sm:my-8">
+            <div className="flex items-center justify-between gap-3 p-4 sm:p-6 border-b border-slate-200">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-800">Report Preview</h2>
               <button
                 onClick={() => setShowPrintView(false)}
                 className="text-slate-400 hover:text-slate-600 text-2xl"
@@ -262,12 +262,12 @@ export default function ViewReports() {
                 ×
               </button>
             </div>
-            <div className="p-6 max-h-96 overflow-y-auto bg-slate-50">
-              <div className="bg-white p-6">
-                <ReportPrint report={selectedReport} />
+            <div className="p-3 sm:p-6 max-h-[75vh] overflow-y-auto bg-slate-50">
+              <div className="bg-white p-2 sm:p-4">
+                <ReportPrint report={selectedReport} renderMode="screen" />
               </div>
             </div>
-            <div className="flex gap-2 p-6 border-t border-slate-200 bg-slate-50">
+            <div className="flex flex-col sm:flex-row gap-2 p-4 sm:p-6 border-t border-slate-200 bg-slate-50">
               <button
                 onClick={() => setShowPrintView(false)}
                 className="btn-secondary"

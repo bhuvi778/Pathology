@@ -106,7 +106,8 @@ export default function ManageUsers() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[860px]">
           <thead>
             <tr>
               <th className="table-th">Name</th>
@@ -148,6 +149,7 @@ export default function ManageUsers() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Edit User' : 'Add New User'}>

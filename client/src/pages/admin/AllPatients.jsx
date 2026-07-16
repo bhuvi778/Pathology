@@ -161,7 +161,7 @@ export default function AllPatients() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">All Patients</h1>
           <p className="text-slate-500 text-sm">{total} total patients registered</p>
@@ -178,7 +178,8 @@ export default function AllPatients() {
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
         {loading ? <LoadingSpinner /> : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[1180px]">
             <thead>
               <tr>
                 <th className="table-th">Patient ID</th>
@@ -263,6 +264,7 @@ export default function AllPatients() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

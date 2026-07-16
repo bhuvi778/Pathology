@@ -58,7 +58,7 @@ export default function Billing() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Billing & Payments</h1>
           <p className="text-slate-500 text-sm">{total} total bills</p>
@@ -78,7 +78,8 @@ export default function Billing() {
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
         {loading ? <LoadingSpinner /> : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px]">
             <thead>
               <tr>
                 <th className="table-th">Bill ID</th>
@@ -123,6 +124,7 @@ export default function Billing() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

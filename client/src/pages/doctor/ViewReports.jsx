@@ -85,7 +85,8 @@ export default function ViewReports() {
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
         {loading ? <LoadingSpinner /> : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px]">
             <thead>
               <tr>
                 <th className="table-th">Report ID</th>
@@ -131,6 +132,7 @@ export default function ViewReports() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
