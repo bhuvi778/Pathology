@@ -1,4 +1,5 @@
 import { createReportPdfFile, getStoredLabSettings } from './pdf';
+import { createBillPdfFile } from './billPdf';
 
 const getReportTestLabel = (report) => {
   const tests = Array.isArray(report?.tests) && report.tests.length
@@ -21,6 +22,22 @@ Report ID: ${report.reportId}
 Status: ${report.status}
 Date: ${new Date(report.reportDate || Date.now()).toLocaleDateString()}
 ${report.remarks ? `Remarks: ${report.remarks}` : ''}
+  `.trim();
+};
+
+const buildBillWhatsAppMessage = (bill, settings = {}) => {
+  const title = settings.reportHeader || settings.labName || 'Lab Bill';
+  return `
+${title}
+
+Patient: ${bill?.patient?.name || '-'}
+Patient ID: ${bill?.patient?.patientId || '-'}
+Bill ID: ${bill?.billId || '-'}
+Total: ${bill?.total ?? '-'}
+Paid: ${bill?.paidAmount ?? '-'}
+Balance: ${bill?.balance ?? '-'}
+Status: ${bill?.paymentStatus || '-'}
+Date: ${new Date(bill?.createdAt || Date.now()).toLocaleDateString()}
   `.trim();
 };
 
@@ -76,6 +93,28 @@ const shareReport = async (report, phoneNumber) => {
   return { mode: 'download-fallback', fileName: pdfFile.name };
 };
 
+const shareBill = async (bill, phoneNumber) => {
+  const settings = getStoredLabSettings();
+  const message = buildBillWhatsAppMessage(bill, settings);
+  const pdfFile = await createBillPdfFile(bill, {
+    renderMode: 'share',
+    labSettings: settings,
+  });
+
+  if (canShareFiles([pdfFile])) {
+    await navigator.share({
+      title: settings.reportHeader || settings.labName || bill?.billId,
+      text: message,
+      files: [pdfFile],
+    });
+    return { mode: 'native-share', fileName: pdfFile.name };
+  }
+
+  downloadFile(pdfFile);
+  openWhatsAppLink(message, phoneNumber);
+  return { mode: 'download-fallback', fileName: pdfFile.name };
+};
+
 export const shareReportOnWhatsApp = async (report, labName = 'Lab') => {
   return shareReport(report, '');
 };
@@ -99,8 +138,13 @@ export const shareReportViaWhatsAppNumber = async (report, phoneNumber) => {
   return shareReport(report, phoneNumber);
 };
 
+export const shareBillViaWhatsAppNumber = async (bill, phoneNumber) => {
+  return shareBill(bill, phoneNumber);
+};
+
 export default {
   shareReportOnWhatsApp,
   shareMultipleReportsOnWhatsApp,
   shareReportViaWhatsAppNumber,
+  shareBillViaWhatsAppNumber,
 };

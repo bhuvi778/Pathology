@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Edit2 } from 'lucide-react';
+import { Trash2, Edit2, Printer, Phone } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import api from '../../utils/api';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import toast from 'react-hot-toast';
+import { printBill } from '../../utils/billPdf';
+import { shareBillViaWhatsAppNumber } from '../../utils/whatsapp';
 
 const emptyPayment = { paidAmount: '', discount: '', discountType: 'fixed', paymentMethod: 'cash' };
 
@@ -74,6 +76,39 @@ export default function AllBills() {
     }
   };
 
+  const loadBillForAction = async (bill) => {
+    try {
+      const response = await api.get(`/bills/${bill._id}`);
+      return response.data;
+    } catch {
+      return bill;
+    }
+  };
+
+  const handleBillPrint = async (bill) => {
+    try {
+      const fullBill = await loadBillForAction(bill);
+      await printBill(fullBill);
+    } catch {
+      toast.error('Error printing bill');
+    }
+  };
+
+  const handleBillShare = async (bill) => {
+    try {
+      const fullBill = await loadBillForAction(bill);
+      const result = await shareBillViaWhatsAppNumber(fullBill, fullBill?.patient?.phone || '');
+      if (result?.mode === 'native-share') {
+        toast.success('WhatsApp share sheet opened with bill PDF');
+      } else {
+        toast.success('Bill PDF downloaded and WhatsApp chat opened');
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      toast.error('Could not prepare bill share');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -130,6 +165,20 @@ export default function AllBills() {
                   <td className="table-td text-xs text-slate-400">{formatDate(b.createdAt)}</td>
                   <td className="table-td">
                     <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleBillPrint(b)}
+                        title="Print Bill"
+                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 border border-slate-200"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleBillShare(b)}
+                        title="Share Bill"
+                        className="p-1.5 rounded-lg hover:bg-green-50 text-green-600 border border-green-100"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => openEditPayment(b)}
                         title="Edit Payment"

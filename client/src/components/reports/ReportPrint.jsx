@@ -78,6 +78,7 @@ function CbcClassicPrint({ report, patient, section, renderMode }) {
   const isPrintLike = renderMode === 'print' || renderMode === 'share';
   const isMobile = !isPrintLike && getResponsiveMode();
   const reportDate = formatDate(report?.reportDate || new Date(), 'dd/MM/yyyy');
+  const reportTime = formatDate(report?.reportDate || new Date(), 'hh:mm a');
   const registeredDate = formatDate(report?.appointment?.appointmentDate || report?.reportDate || new Date(), 'dd/MM/yyyy');
   const results = section?.results || [];
   const plateletResult = findResultByNames(results, ['Platelet Count', 'Platelets', 'Platelet']);
@@ -112,6 +113,7 @@ function CbcClassicPrint({ report, patient, section, renderMode }) {
           <div>
             <div style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: '700', letterSpacing: '0.3px' }}>{patient?.name || 'Patient'}</div>
             <div style={{ marginTop: '4px' }}>Age / Sex : {patient?.age} {patient?.ageUnit || 'YRS'} / {String(patient?.gender || '').toUpperCase()}</div>
+            <div style={{ marginTop: '3px' }}>Blood Group : {patient?.bloodGroup || 'N/A'}</div>
             <div style={{ marginTop: '3px' }}>Referred by : {report?.doctor?.name || '-'}</div>
             <div style={{ marginTop: '3px' }}>Reg. no. : <strong>{patient?.patientId || '-'}</strong></div>
           </div>
@@ -121,6 +123,7 @@ function CbcClassicPrint({ report, patient, section, renderMode }) {
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '92px 1fr', rowGap: '3px', columnGap: '6px' }}>
               <span>Registered on{isMobile ? `: ${registeredDate}` : ''}</span>{!isMobile && <span>: {registeredDate}</span>}
               <span>Reported on{isMobile ? `: ${reportDate}` : ''}</span>{!isMobile && <span>: {reportDate}</span>}
+              <span>Patient time{isMobile ? `: ${reportTime}` : ''}</span>{!isMobile && <span>: {reportTime}</span>}
             </div>
           </div>
 
@@ -194,6 +197,7 @@ function CbcClassicPrint({ report, patient, section, renderMode }) {
 function SerumUricAcidClassicPrint({ report, patient, section }) {
   const firstResult = section?.results?.[0] || {};
   const reportDate = formatDate(report?.reportDate || new Date(), 'dd/MM/yyyy');
+  const reportTime = formatDate(report?.reportDate || new Date(), 'hh:mm a');
   const registeredDate = formatDate(report?.appointment?.appointmentDate || report?.reportDate || new Date(), 'dd/MM/yyyy');
   const receivedDate = formatDate(report?.reportDate || new Date(), 'dd/MM/yyyy');
 
@@ -204,6 +208,7 @@ function SerumUricAcidClassicPrint({ report, patient, section }) {
           <div>
             <div style={{ fontSize: '14px', fontWeight: '700', letterSpacing: '0.3px' }}>{patient?.name || 'Patient'}</div>
             <div style={{ marginTop: '4px', fontSize: '12px' }}>Age / Sex &nbsp;&nbsp; : {patient?.age} YRS / {String(patient?.gender || '').toUpperCase()}</div>
+            <div style={{ marginTop: '3px', fontSize: '12px' }}>Blood Group : {patient?.bloodGroup || 'N/A'}</div>
             <div style={{ marginTop: '3px', fontSize: '12px' }}>Referred by &nbsp; : {report?.doctor?.name || '-'}</div>
             <div style={{ marginTop: '3px', fontSize: '12px' }}>Reg. no. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : <strong>{patient?.patientId || '-'}</strong></div>
           </div>
@@ -214,6 +219,7 @@ function SerumUricAcidClassicPrint({ report, patient, section }) {
               <span>Registered on</span><span>: {registeredDate}</span>
               <span>Received on</span><span>: {receivedDate}</span>
               <span>Reported on</span><span>: {reportDate}</span>
+              <span>Patient time</span><span>: {reportTime}</span>
             </div>
           </div>
 
@@ -350,10 +356,6 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
           <span>{patient?.patientId}</span>
         </div>
         <div style={{ display: 'flex', flexDirection: isCompactScreen ? 'column' : 'row', gap: '8px' }}>
-          <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>IP Number:</span>
-          <span>{patient?.ipNumber || 'N/A'}</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: isCompactScreen ? 'column' : 'row', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Age/Gender:</span>
           <span>{patient?.age} {patient?.ageUnit} / {patient?.gender}</span>
         </div>
@@ -364,6 +366,10 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
         <div style={{ display: 'flex', flexDirection: isCompactScreen ? 'column' : 'row', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Report Date:</span>
           <span>{formatDate(report?.reportDate || new Date(), 'dd/MM/yyyy')}</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: isCompactScreen ? 'column' : 'row', gap: '8px' }}>
+          <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Patient Time:</span>
+          <span>{formatDate(report?.reportDate || new Date(), 'hh:mm a')}</span>
         </div>
         <div style={{ display: 'flex', flexDirection: isCompactScreen ? 'column' : 'row', gap: '8px' }}>
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Report ID:</span>
@@ -387,21 +393,21 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
           <table style={{ width: '100%', minWidth: isCompactScreen ? '500px' : '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
             <thead>
               <tr style={{ backgroundColor: 'transparent', color: '#111827', borderBottom: isPlainResultLayout ? '1px solid #9ca3af' : '1px solid #e5e7eb' }}>
-                <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: '700', fontSize: '11px' }}>Parameter</th>
-                <th style={{ padding: '8px 6px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '82px' }}>Result</th>
-                <th style={{ padding: '8px 6px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '70px' }}>Unit</th>
-                <th style={{ padding: '8px 6px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '132px' }}>Reference Range</th>
+                <th style={{ padding: '8px 8px', textAlign: 'left', fontWeight: '700', fontSize: '11px', width: '52%' }}>Parameter</th>
+                <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '14%' }}>Result</th>
+                <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '12%' }}>Unit</th>
+                <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '22%' }}>Reference Range</th>
               </tr>
             </thead>
             <tbody>
               {section.results.map((result, index) => (
                 <tr key={`${String(result.test || '')}-${result.parameterName}`} style={{ backgroundColor: 'transparent', borderBottom: isPlainResultLayout ? 'none' : '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '7px 10px', fontWeight: '500' }}>{result.parameterName}</td>
-                  <td style={{ padding: '7px 6px', textAlign: 'center', fontSize: '13px', ...getResultValueStyle(result.flag) }}>
+                  <td style={{ padding: '7px 8px', fontWeight: '500' }}>{result.parameterName}</td>
+                  <td style={{ padding: '7px 4px', textAlign: 'center', fontSize: '13px', ...getResultValueStyle(result.flag) }}>
                     {result.value || '—'}
                   </td>
-                  <td style={{ padding: '7px 6px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.unit || '—'}</td>
-                  <td style={{ padding: '7px 6px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.normalRange || '—'}</td>
+                  <td style={{ padding: '7px 4px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.unit || '—'}</td>
+                  <td style={{ padding: '7px 4px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.normalRange || '—'}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Search, CreditCard, Printer } from 'lucide-react';
+import { CreditCard, Printer, Phone } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { formatDate, formatCurrency } from '../../utils/helpers';
+import { printBill } from '../../utils/billPdf';
+import { shareBillViaWhatsAppNumber } from '../../utils/whatsapp';
 
 export default function Billing() {
   const [bills, setBills] = useState([]);
@@ -51,6 +53,39 @@ export default function Billing() {
       toast.error('Error processing payment');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const loadBillForAction = async (bill) => {
+    try {
+      const response = await api.get(`/bills/${bill._id}`);
+      return response.data;
+    } catch {
+      return bill;
+    }
+  };
+
+  const handleBillPrint = async (bill) => {
+    try {
+      const fullBill = await loadBillForAction(bill);
+      await printBill(fullBill);
+    } catch {
+      toast.error('Error printing bill');
+    }
+  };
+
+  const handleBillShare = async (bill) => {
+    try {
+      const fullBill = await loadBillForAction(bill);
+      const result = await shareBillViaWhatsAppNumber(fullBill, fullBill?.patient?.phone || '');
+      if (result?.mode === 'native-share') {
+        toast.success('WhatsApp share sheet opened with bill PDF');
+      } else {
+        toast.success('Bill PDF downloaded and WhatsApp chat opened');
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      toast.error('Could not prepare bill share');
     }
   };
 
@@ -114,11 +149,25 @@ export default function Billing() {
                   <td className="table-td font-medium" style={{ color: b.balance > 0 ? '#dc2626' : '#16a34a' }}>{formatCurrency(b.balance)}</td>
                   <td className="table-td"><Badge status={b.paymentStatus} /></td>
                   <td className="table-td">
-                    {b.paymentStatus !== 'paid' && (
-                      <button onClick={() => openPayment(b)} className="btn-success py-1 px-3 text-xs flex items-center gap-1">
-                        <CreditCard className="w-3 h-3" /> Pay
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => handleBillPrint(b)}
+                        className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
+                      >
+                        <Printer className="w-3 h-3" /> Print
                       </button>
-                    )}
+                      <button
+                        onClick={() => handleBillShare(b)}
+                        className="bg-green-600 hover:bg-green-700 text-white py-1 px-3 text-xs rounded-lg flex items-center gap-1 transition-colors"
+                      >
+                        <Phone className="w-3 h-3" /> Share
+                      </button>
+                      {b.paymentStatus !== 'paid' && (
+                        <button onClick={() => openPayment(b)} className="btn-success py-1 px-3 text-xs flex items-center gap-1">
+                          <CreditCard className="w-3 h-3" /> Pay
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

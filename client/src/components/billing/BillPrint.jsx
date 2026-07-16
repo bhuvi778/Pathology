@@ -1,23 +1,27 @@
 import { formatDate, formatCurrency } from '../../utils/helpers';
 
-export default function BillPrint({ bill }) {
-  const labSettings = JSON.parse(localStorage.getItem('labSettings') || '{}');
+export default function BillPrint({ bill, renderMode = 'print', labSettingsOverride }) {
+  const labSettings = labSettingsOverride || JSON.parse(localStorage.getItem('labSettings') || '{}');
   const labName = labSettings.labName || 'Laboratory';
   const labAddress = labSettings.labAddress || '';
   const labPhone = labSettings.labPhone || '';
+  const includeHeader = renderMode === 'share';
+  const topPadding = renderMode === 'print' ? '5cm' : '24px';
   const patient = bill?.patient;
 
   const paymentStatusColor = bill?.paymentStatus === 'paid' ? '#16a34a' : bill?.paymentStatus === 'partial' ? '#d97706' : '#dc2626';
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000', padding: '24px', maxWidth: '500px', margin: '0 auto' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000', padding: '24px', paddingTop: topPadding, maxWidth: '500px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ textAlign: 'center', borderBottom: '3px solid #2563eb', paddingBottom: '12px', marginBottom: '16px' }}>
-        <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 4px 0', color: '#1e3a8a' }}>{labName}</h1>
-        <p style={{ fontSize: '10px', margin: '1px 0', color: '#4b5563' }}>{labAddress}</p>
-        <p style={{ fontSize: '10px', margin: '1px 0', color: '#4b5563' }}>Tel: {labPhone}</p>
-        <h2 style={{ fontSize: '14px', fontWeight: 'bold', margin: '10px 0 0 0', textTransform: 'uppercase', letterSpacing: '2px', color: '#2563eb' }}>Bill / Invoice</h2>
-      </div>
+      {includeHeader && (
+        <div style={{ textAlign: 'center', borderBottom: '3px solid #2563eb', paddingBottom: '12px', marginBottom: '16px' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 4px 0', color: '#1e3a8a' }}>{labName}</h1>
+          <p style={{ fontSize: '10px', margin: '1px 0', color: '#4b5563' }}>{labAddress}</p>
+          <p style={{ fontSize: '10px', margin: '1px 0', color: '#4b5563' }}>Tel: {labPhone}</p>
+          <h2 style={{ fontSize: '14px', fontWeight: 'bold', margin: '10px 0 0 0', textTransform: 'uppercase', letterSpacing: '2px', color: '#2563eb' }}>Bill / Invoice</h2>
+        </div>
+      )}
 
       {/* Bill & Patient Info */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', padding: '10px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '11px' }}>
