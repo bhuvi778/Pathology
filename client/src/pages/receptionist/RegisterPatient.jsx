@@ -4,23 +4,19 @@ import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { UserPlus, ChevronLeft } from 'lucide-react';
 
-const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
-
 export default function RegisterPatient() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '', age: '', ageUnit: 'years', gender: 'male', phone: '',
-    email: '', address: '', cnic: '', ipNumber: '', bloodGroup: 'Unknown', referredBy: '', medicalHistory: '',
+    email: '', address: '', cnic: '', referredBy: '', medicalHistory: '',
   });
   const [tests, setTests] = useState([]);
   const [selectedTests, setSelectedTests] = useState([]);
-  const [settings, setSettings] = useState({ autoIpNumber: true });
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     api.get('/tests').then(res => setTests(res.data)).catch(() => setTests([]));
-    api.get('/settings').then(res => setSettings(res.data)).catch(() => {});
   }, []);
 
   const toggleTest = (test) => {
@@ -31,11 +27,6 @@ export default function RegisterPatient() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (settings.autoIpNumber === false && !form.ipNumber) {
-        toast.error('Please enter a valid IP Number or enable automatic IP generation in settings.');
-        setLoading(false);
-        return;
-      }
       const patient = await api.post('/patients', { ...form, tests: selectedTests.map(t => t._id) });
       toast.success(`Patient registered! ID: ${patient.data.patientId}`);
       if (selectedTests.length > 0) {
@@ -106,25 +97,7 @@ export default function RegisterPatient() {
 
         <div className="grid grid-cols-2 gap-4">
           <div><label className="label">CNIC (Optional)</label><input value={form.cnic} onChange={e => setForm(f => ({ ...f, cnic: e.target.value }))} className="input-field" placeholder="XXXXX-XXXXXXX-X" /></div>
-          <div>
-            <label className="label">IP Number</label>
-            <input
-              disabled={settings.autoIpNumber}
-              value={form.ipNumber}
-              onChange={e => setForm(f => ({ ...f, ipNumber: e.target.value }))}
-              className="input-field"
-              placeholder={settings.autoIpNumber ? 'Auto-generated after save' : 'Enter IP number'}
-            />
-            {!settings.autoIpNumber && <p className="text-xs text-slate-500 mt-1">IP number must be unique.</p>}
-            {settings.autoIpNumber && <p className="text-xs text-slate-500 mt-1">Auto-IP mode is enabled in Lab Settings.</p>}
-          </div>
-        </div>
-
-        <div>
-          <label className="label">Blood Group</label>
-          <select value={form.bloodGroup} onChange={e => setForm(f => ({ ...f, bloodGroup: e.target.value }))} className="input-field">
-            {bloodGroups.map(bg => <option key={bg} value={bg}>{bg}</option>)}
-          </select>
+          <div />
         </div>
 
         <div><label className="label">Selected Tests</label>

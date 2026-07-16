@@ -309,17 +309,19 @@ export default function AllPatients() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="label">CNIC (Optional)</label><input value={editForm.cnic} onChange={e => setEditForm(f => ({ ...f, cnic: e.target.value }))} className="input-field" placeholder="XXXXX-XXXXXXX-X" /></div>
-            <div><label className="label">IP Number</label><input value={editForm.ipNumber || ''} onChange={e => setEditForm(f => ({ ...f, ipNumber: e.target.value }))} className="input-field" placeholder="Optional IP number" /></div>
+            {!isNewPatient && <div><label className="label">IP Number</label><input value={editForm.ipNumber || ''} onChange={e => setEditForm(f => ({ ...f, ipNumber: e.target.value }))} className="input-field" placeholder="Optional IP number" /></div>}
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Blood Group</label>
-              <select value={editForm.bloodGroup} onChange={e => setEditForm(f => ({ ...f, bloodGroup: e.target.value }))} className="input-field">
-                <option value="">Select</option>
-                {bloodGroups.map(bg => <option key={bg} value={bg}>{bg}</option>)}
-              </select>
+          {!isNewPatient && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label">Blood Group</label>
+                <select value={editForm.bloodGroup} onChange={e => setEditForm(f => ({ ...f, bloodGroup: e.target.value }))} className="input-field">
+                  <option value="">Select</option>
+                  {bloodGroups.map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
           {isNewPatient && (
             <div>
               <label className="label">Select Tests</label>
