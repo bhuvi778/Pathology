@@ -71,10 +71,11 @@ const canShareFiles = (files) => {
   }
 };
 
-const shareReport = async (report, phoneNumber) => {
+const shareReport = async (report, phoneNumber, options = {}) => {
   const settings = getStoredLabSettings();
   const message = buildWhatsAppMessage(report, settings);
-  const pdfFile = await createReportPdfFile(report, {
+  const reportsForPdf = Array.isArray(options.reports) && options.reports.length ? options.reports : report;
+  const pdfFile = await createReportPdfFile(reportsForPdf, {
     renderMode: 'share',
     labSettings: settings,
   });
@@ -134,8 +135,8 @@ ${reports.map((report, index) => `${index + 1}. ${report.patient?.name} - ${getR
   return { mode: 'message-only' };
 };
 
-export const shareReportViaWhatsAppNumber = async (report, phoneNumber) => {
-  return shareReport(report, phoneNumber);
+export const shareReportViaWhatsAppNumber = async (report, phoneNumber, options = {}) => {
+  return shareReport(report, phoneNumber, options);
 };
 
 export const shareBillViaWhatsAppNumber = async (bill, phoneNumber) => {

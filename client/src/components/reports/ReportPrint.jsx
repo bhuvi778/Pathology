@@ -259,7 +259,7 @@ function SerumUricAcidClassicPrint({ report, patient, section }) {
   );
 }
 
-export default function ReportPrint({ report, appointment, renderMode = 'print', labSettingsOverride }) {
+export default function ReportPrint({ report, appointment, renderMode = 'print', labSettingsOverride, separateTestPages = false }) {
   const patient = report?.patient || appointment?.patient;
   const groupedResults = groupReportResults(report);
   const [isMobileScreen, setIsMobileScreen] = useState(() => renderMode === 'screen' && getResponsiveMode());
@@ -314,6 +314,7 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
   const topPadding = isPrintMode ? '5cm' : isShareMode ? '32px' : isCompactScreen ? '12px' : '24px';
   const isPlainResultLayout = renderMode === 'print' || renderMode === 'share';
   const sectionDividerColor = isPrintMode ? '#9ca3af' : '#111827';
+  const doctorName = report?.doctor?.name || report?.appointment?.doctor?.name || appointment?.doctor?.name || '-';
 
   if (isPrintMode && isSerumUricAcidClassicReport(groupedResults)) {
     return <SerumUricAcidClassicPrint report={report} patient={patient} section={groupedResults[0]} />;
@@ -379,10 +380,21 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
           <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Tests:</span>
           <span>{getReportTestLabel(report)}</span>
         </div>
+        <div style={{ display: 'flex', flexDirection: isCompactScreen ? 'column' : 'row', gap: '8px' }}>
+          <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '90px' }}>Referred By:</span>
+          <span>{doctorName}</span>
+        </div>
       </div>
 
-      {groupedResults.length > 0 ? groupedResults.map((section) => (
-        <div key={String(section.test?._id || section.testId)} style={{ marginBottom: '18px' }}>
+      {groupedResults.length > 0 ? groupedResults.map((section, index) => (
+        <div
+          key={String(section.test?._id || section.testId)}
+          style={{
+            marginBottom: '18px',
+            pageBreakAfter: isPrintMode && separateTestPages && index < groupedResults.length - 1 ? 'always' : 'auto',
+            breakAfter: isPrintMode && separateTestPages && index < groupedResults.length - 1 ? 'page' : 'auto',
+          }}
+        >
           <div style={{ marginBottom: '8px', padding: isPlainResultLayout ? '0 0 4px' : '8px 10px', backgroundColor: isPlainResultLayout ? 'transparent' : '#e2e8f0', borderRadius: '6px', borderBottom: isPlainResultLayout ? `1px solid ${sectionDividerColor}` : 'none', fontWeight: '700', color: '#111827' }}>
             {section.test?.name}
             <span style={{ fontWeight: '400', marginLeft: '8px', color: '#475569', fontSize: '11px' }}>
@@ -393,17 +405,17 @@ export default function ReportPrint({ report, appointment, renderMode = 'print',
           <table style={{ width: '100%', minWidth: isCompactScreen ? '500px' : '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
             <thead>
               <tr style={{ backgroundColor: 'transparent', color: '#111827', borderBottom: isPlainResultLayout ? '1px solid #9ca3af' : '1px solid #e5e7eb' }}>
-                <th style={{ padding: '8px 8px', textAlign: 'left', fontWeight: '700', fontSize: '11px', width: '52%' }}>Parameter</th>
-                <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '14%' }}>Result</th>
+                <th style={{ padding: '8px 8px', textAlign: 'left', fontWeight: '700', fontSize: '11px', width: '46%' }}>Parameter</th>
+                <th style={{ padding: '8px 6px', textAlign: 'left', fontWeight: '700', fontSize: '11px', width: '22%' }}>Result</th>
                 <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '12%' }}>Unit</th>
-                <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '22%' }}>Reference Range</th>
+                <th style={{ padding: '8px 4px', textAlign: 'center', fontWeight: '700', fontSize: '11px', width: '20%' }}>Reference Range</th>
               </tr>
             </thead>
             <tbody>
               {section.results.map((result, index) => (
                 <tr key={`${String(result.test || '')}-${result.parameterName}`} style={{ backgroundColor: 'transparent', borderBottom: isPlainResultLayout ? 'none' : '1px solid #e2e8f0' }}>
                   <td style={{ padding: '7px 8px', fontWeight: '500' }}>{result.parameterName}</td>
-                  <td style={{ padding: '7px 4px', textAlign: 'center', fontSize: '13px', ...getResultValueStyle(result.flag) }}>
+                  <td style={{ padding: '7px 6px', textAlign: 'left', fontSize: '13px', ...getResultValueStyle(result.flag) }}>
                     {result.value || '—'}
                   </td>
                   <td style={{ padding: '7px 4px', textAlign: 'center', color: '#6b7280', fontSize: '11px' }}>{result.unit || '—'}</td>

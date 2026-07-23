@@ -10,7 +10,8 @@ import ReportPrint from '../../components/reports/ReportPrint';
 import toast from 'react-hot-toast';
 import { shareReportViaWhatsAppNumber } from '../../utils/whatsapp';
 import TestSelectionModal from '../../components/reports/TestSelectionModal';
-import { buildSingleTestReport, getReportTests } from '../../utils/helpers';
+import { buildScopedReportByTests, getReportTests } from '../../utils/helpers';
+import { printReport } from '../../utils/pdf';
 
 export default function AllReports() {
   const [reports, setReports] = useState([]);
@@ -52,9 +53,9 @@ export default function AllReports() {
     setTimeout(handlePrint, 100);
   };
 
-  const shareOnWhatsApp = async (reportData) => {
+  const shareOnWhatsApp = async (reportData, options = {}) => {
     try {
-      const result = await shareReportViaWhatsAppNumber(reportData, reportData.patient?.phone || '');
+      const result = await shareReportViaWhatsAppNumber(reportData, reportData.patient?.phone || '', options);
       if (result?.mode === 'native-share') {
         toast.success('WhatsApp share sheet opened with PDF attached');
       } else {
@@ -84,17 +85,27 @@ export default function AllReports() {
     }
   };
 
-  const handleSelectionConfirm = async (selectedTestId) => {
-    const scopedReport = buildSingleTestReport(selectionModal.report, selectedTestId);
+  const handleSelectionConfirm = async ({ selectedTestIds, pageMode }) => {
+    const scopedReport = buildScopedReportByTests(selectionModal.report, selectedTestIds);
+    const separatePages = pageMode === 'separate-pages';
+    const selectedReports = separatePages
+      ? selectedTestIds.map((testId) => buildScopedReportByTests(selectionModal.report, [testId]))
+      : [];
     const selectedAction = selectionModal.action;
     setSelectionModal({ open: false, action: '', report: null });
 
     if (selectedAction === 'print') {
-      doPrint(scopedReport);
+      if (separatePages && selectedReports.length > 1) {
+        await printReport(selectedReports);
+      } else {
+        doPrint(scopedReport);
+      }
       return;
     }
 
-    await shareOnWhatsApp(scopedReport);
+    await shareOnWhatsApp(scopedReport, {
+      reports: separatePages && selectedReports.length > 1 ? selectedReports : undefined,
+    });
   };
 
   const markDelivered = async (r) => {

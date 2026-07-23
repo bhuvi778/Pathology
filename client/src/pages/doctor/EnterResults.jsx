@@ -8,8 +8,9 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Badge from '../../components/common/Badge';
 import ReportPrint from '../../components/reports/ReportPrint';
 import TestSelectionModal from '../../components/reports/TestSelectionModal';
+import { printReport } from '../../utils/pdf';
 import {
-  buildSingleTestReport,
+  buildScopedReportByTests,
   calculateFlag,
   formatDate,
   getReportTests,
@@ -62,9 +63,19 @@ export default function EnterResults({ title = 'Enter Test Results' }) {
     setSelectionModal({ open: true, report });
   };
 
-  const handleSelectionConfirm = (selectedTestId) => {
-    const scopedReport = buildSingleTestReport(selectionModal.report, selectedTestId);
+  const handleSelectionConfirm = async ({ selectedTestIds, pageMode }) => {
+    const scopedReport = buildScopedReportByTests(selectionModal.report, selectedTestIds);
+    const separatePages = pageMode === 'separate-pages';
+    const selectedReports = separatePages
+      ? selectedTestIds.map((testId) => buildScopedReportByTests(selectionModal.report, [testId]))
+      : [];
     setSelectionModal({ open: false, report: null });
+
+    if (separatePages && selectedReports.length > 1) {
+      await printReport(selectedReports);
+      return;
+    }
+
     setPrintReport(scopedReport);
     setTimeout(handlePrint, 100);
   };

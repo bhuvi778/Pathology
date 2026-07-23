@@ -149,6 +149,7 @@ const mergeReportsByAppointment = (reports, gender) => {
     current.results.push(...(Array.isArray(report.results) ? report.results : []));
     current.remarks = [current.remarks, report.remarks].filter(Boolean).join('\n');
     current.status = getOverallStatus([current.status, report.status]);
+    current.doctor = current.doctor || report.doctor;
     current.enteredBy = current.enteredBy || report.enteredBy;
     current.verifiedBy = current.verifiedBy || report.verifiedBy;
     current.reportDate = current.reportDate || report.reportDate;

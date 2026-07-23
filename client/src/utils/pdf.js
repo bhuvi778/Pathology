@@ -54,7 +54,8 @@ const waitForImages = async (container) => {
   }));
 };
 
-const renderReportToContainer = async (report, options = {}) => {
+const renderReportsToContainer = async (reportOrReports, options = {}) => {
+  const reports = Array.isArray(reportOrReports) ? reportOrReports : [reportOrReports];
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.left = '-10000px';
@@ -65,12 +66,34 @@ const renderReportToContainer = async (report, options = {}) => {
   document.body.appendChild(container);
 
   const root = createRoot(container);
-  root.render(createElement(ReportPrint, {
-    report,
-    appointment: report?.appointment,
+  const sharedProps = {
     renderMode: options.renderMode || 'print',
     labSettingsOverride: normalizeLabSettings(options.labSettings || getStoredLabSettings()),
-  }));
+  };
+
+  if (reports.length === 1) {
+    const report = reports[0];
+    root.render(createElement(ReportPrint, {
+      ...sharedProps,
+      report,
+      appointment: report?.appointment,
+      separateTestPages: Boolean(options.separateTestPages),
+    }));
+  } else {
+    root.render(createElement('div', { className: 'report-print-batch-root' },
+      reports.map((report, index) => createElement('div', {
+        key: `${report?._id || report?.reportId || index}-${index}`,
+        style: {
+          pageBreakAfter: index < reports.length - 1 ? 'always' : 'auto',
+          breakAfter: index < reports.length - 1 ? 'page' : 'auto',
+        },
+      }, createElement(ReportPrint, {
+        ...sharedProps,
+        report,
+        appointment: report?.appointment,
+      })))
+    ));
+  }
 
   await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   if (document.fonts?.ready) await document.fonts.ready;
@@ -85,8 +108,7 @@ const renderReportToContainer = async (report, options = {}) => {
   };
 };
 
-const buildPdfFromCanvas = (canvas) => {
-  const pdf = new jsPDF('p', 'pt', 'a4');
+const appendCanvasToPdf = (pdf, canvas, addFirstPage = false) => {
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const imgWidth = pageWidth;
@@ -95,6 +117,10 @@ const buildPdfFromCanvas = (canvas) => {
 
   let heightLeft = imgHeight;
   let position = 0;
+
+  if (addFirstPage) {
+    pdf.addPage();
+  }
 
   pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
   heightLeft -= pageHeight;
@@ -106,6 +132,11 @@ const buildPdfFromCanvas = (canvas) => {
     heightLeft -= pageHeight;
   }
 
+};
+
+const buildPdfFromCanvas = (canvas) => {
+  const pdf = new jsPDF('p', 'pt', 'a4');
+  appendCanvasToPdf(pdf, canvas, false);
   return pdf;
 };
 
@@ -114,29 +145,69 @@ export const generatePDFFilename = (report) => {
   return `Report_${report.reportId}_${report.patient?.patientId}_${date}.pdf`;
 };
 
-export const createReportPdfBlob = async (report, options = {}) => {
-  const { container, cleanup } = await renderReportToContainer(report, options);
-  try {
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      width: container.scrollWidth,
-      height: container.scrollHeight,
-      windowWidth: container.scrollWidth,
-      windowHeight: container.scrollHeight,
-    });
-    const pdf = buildPdfFromCanvas(canvas);
-    return pdf.output('blob');
-  } finally {
-    cleanup();
+export const createReportPdfBlob = async (reportOrReports, options = {}) => {
+  const reports = Array.isArray(reportOrReports) ? reportOrReports.filter(Boolean) : [reportOrReports];
+  if (!reports.length) {
+    throw new Error('No report provided for PDF generation');
   }
+
+  if (reports.length === 1) {
+    const { container, cleanup } = await renderReportsToContainer(reports[0], options);
+    try {
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: container.scrollWidth,
+        height: container.scrollHeight,
+        windowWidth: container.scrollWidth,
+        windowHeight: container.scrollHeight,
+      });
+      const pdf = buildPdfFromCanvas(canvas);
+      return pdf.output('blob');
+    } finally {
+      cleanup();
+    }
+  }
+
+  const pdf = new jsPDF('p', 'pt', 'a4');
+  let hasPages = false;
+  for (const report of reports) {
+    const { container, cleanup } = await renderReportsToContainer(report, options);
+    try {
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: container.scrollWidth,
+        height: container.scrollHeight,
+        windowWidth: container.scrollWidth,
+        windowHeight: container.scrollHeight,
+      });
+      appendCanvasToPdf(pdf, canvas, hasPages);
+      hasPages = true;
+    } finally {
+      cleanup();
+    }
+  }
+
+  return pdf.output('blob');
 };
 
-export const createReportPdfFile = async (report, options = {}) => {
-  const blob = await createReportPdfBlob(report, options);
-  return new File([blob], generatePDFFilename(report), { type: 'application/pdf' });
+export const createReportPdfFile = async (reportOrReports, options = {}) => {
+  const reports = Array.isArray(reportOrReports) ? reportOrReports.filter(Boolean) : [reportOrReports];
+  const primaryReport = reports[0];
+  const blob = await createReportPdfBlob(reports.length === 1 ? primaryReport : reports, options);
+
+  if (reports.length > 1) {
+    const date = new Date(primaryReport?.reportDate || Date.now()).toISOString().split('T')[0];
+    const patientId = primaryReport?.patient?.patientId || 'Patient';
+    return new File([blob], `Report_${primaryReport?.reportId || 'Combined'}_${patientId}_${date}_multi.pdf`, { type: 'application/pdf' });
+  }
+
+  return new File([blob], generatePDFFilename(primaryReport), { type: 'application/pdf' });
 };
 
 const triggerFileDownload = (file) => {
@@ -150,9 +221,9 @@ const triggerFileDownload = (file) => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-export const exportReportToPDF = async (report, options = {}) => {
+export const exportReportToPDF = async (reportOrReports, options = {}) => {
   try {
-    const file = await createReportPdfFile(report, {
+    const file = await createReportPdfFile(reportOrReports, {
       renderMode: 'print',
       ...options,
     });
@@ -164,8 +235,10 @@ export const exportReportToPDF = async (report, options = {}) => {
   }
 };
 
-export const printReport = async (report, options = {}) => {
-  const { container, cleanup } = await renderReportToContainer(report, {
+export const printReport = async (reportOrReports, options = {}) => {
+  const reports = Array.isArray(reportOrReports) ? reportOrReports : [reportOrReports];
+  const firstReport = reports[0] || {};
+  const { container, cleanup } = await renderReportsToContainer(reports, {
     renderMode: 'print',
     ...options,
   });
@@ -180,7 +253,7 @@ export const printReport = async (report, options = {}) => {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Report-${report.reportId}</title>
+          <title>Report-${firstReport.reportId || 'Print'}</title>
           <style>
             @page { size: auto; margin: 10mm; }
             html, body { margin: 0; padding: 0; background: #fff !important; }

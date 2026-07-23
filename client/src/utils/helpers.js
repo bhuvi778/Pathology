@@ -114,20 +114,26 @@ export const getReportTestLabel = (report) => {
 };
 
 export const buildSingleTestReport = (report, selectedTestId) => {
-  if (!report || !selectedTestId) return report;
+  const selectedIds = selectedTestId ? [selectedTestId] : [];
+  return buildScopedReportByTests(report, selectedIds);
+};
+
+export const buildScopedReportByTests = (report, selectedTestIds = []) => {
+  if (!report || !Array.isArray(selectedTestIds) || !selectedTestIds.length) return report;
 
   const tests = getReportTests(report);
-  const selectedTest = tests.find((test) => String(test?._id || test) === String(selectedTestId));
-  if (!selectedTest) return report;
+  const selectedIdSet = new Set(selectedTestIds.map((id) => String(id)));
+  const scopedTests = tests.filter((test) => selectedIdSet.has(String(test?._id || test)));
+  if (!scopedTests.length) return report;
 
   const filteredResults = (report.results || []).filter(
-    (result) => String(result.test || result.testId || '') === String(selectedTestId)
+    (result) => selectedIdSet.has(String(result.test || result.testId || ''))
   );
 
   return {
     ...report,
-    tests: [selectedTest],
-    test: selectedTest,
+    tests: scopedTests,
+    test: scopedTests[0],
     results: filteredResults,
   };
 };

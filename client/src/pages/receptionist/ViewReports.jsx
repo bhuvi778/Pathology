@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { shareReportViaWhatsAppNumber } from '../../utils/whatsapp';
 import { exportReportToPDF, printReport } from '../../utils/pdf';
 import TestSelectionModal from '../../components/reports/TestSelectionModal';
-import { buildSingleTestReport, getReportTests } from '../../utils/helpers';
+import { buildScopedReportByTests, getReportTests } from '../../utils/helpers';
 
 export default function ViewReports() {
   const [reports, setReports] = useState([]);
@@ -48,9 +48,9 @@ export default function ViewReports() {
     );
   });
 
-  const shareOnWhatsApp = async (reportData) => {
+  const shareOnWhatsApp = async (reportData, options = {}) => {
     try {
-      const result = await shareReportViaWhatsAppNumber(reportData, reportData.patient?.phone || '');
+      const result = await shareReportViaWhatsAppNumber(reportData, reportData.patient?.phone || '', options);
       if (result?.mode === 'native-share') {
         toast.success('WhatsApp share sheet opened with PDF attached');
       } else {
@@ -101,17 +101,27 @@ export default function ViewReports() {
     }
   };
 
-  const handleSelectionConfirm = async (selectedTestId) => {
-    const scopedReport = buildSingleTestReport(selectionModal.report, selectedTestId);
+  const handleSelectionConfirm = async ({ selectedTestIds, pageMode }) => {
+    const scopedReport = buildScopedReportByTests(selectionModal.report, selectedTestIds);
+    const separatePages = pageMode === 'separate-pages';
+    const selectedReports = separatePages
+      ? selectedTestIds.map((testId) => buildScopedReportByTests(selectionModal.report, [testId]))
+      : [];
     const selectedAction = selectionModal.action;
     setSelectionModal({ open: false, action: '', report: null });
 
     if (selectedAction === 'print') {
-      handlePrint(scopedReport);
+      if (separatePages && selectedReports.length > 1) {
+        await printReport(selectedReports);
+      } else {
+        await handlePrint(scopedReport);
+      }
       return;
     }
 
-    await shareOnWhatsApp(scopedReport);
+    await shareOnWhatsApp(scopedReport, {
+      reports: separatePages && selectedReports.length > 1 ? selectedReports : undefined,
+    });
   };
 
   if (loading) return <LoadingSpinner text="Loading reports..." />;

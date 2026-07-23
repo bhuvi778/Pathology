@@ -10,7 +10,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import TestSelectionModal from '../../components/reports/TestSelectionModal';
-import { buildSingleTestReport, getReportTests } from '../../utils/helpers';
+import { buildScopedReportByTests, getReportTests } from '../../utils/helpers';
+import { printReport } from '../../utils/pdf';
 
 export default function ViewReports() {
   const [reports, setReports] = useState([]);
@@ -64,9 +65,19 @@ export default function ViewReports() {
     }
   };
 
-  const handleSelectionConfirm = (selectedTestId) => {
-    const scopedReport = buildSingleTestReport(selectionModal.report, selectedTestId);
+  const handleSelectionConfirm = async ({ selectedTestIds, pageMode }) => {
+    const scopedReport = buildScopedReportByTests(selectionModal.report, selectedTestIds);
+    const separatePages = pageMode === 'separate-pages';
+    const selectedReports = separatePages
+      ? selectedTestIds.map((testId) => buildScopedReportByTests(selectionModal.report, [testId]))
+      : [];
     setSelectionModal({ open: false, report: null });
+
+    if (separatePages && selectedReports.length > 1) {
+      await printReport(selectedReports);
+      return;
+    }
+
     doPrint(scopedReport);
   };
 
