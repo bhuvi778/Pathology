@@ -101,11 +101,22 @@ export default function ViewReports() {
     }
   };
 
-  const handleSelectionConfirm = async ({ selectedTestIds, pageMode }) => {
-    const scopedReport = buildScopedReportByTests(selectionModal.report, selectedTestIds);
+  const withSelectedDoctor = (reportData, selectedDoctor) => {
+    if (!selectedDoctor) return reportData;
+    return {
+      ...reportData,
+      doctor: selectedDoctor,
+    };
+  };
+
+  const handleSelectionConfirm = async ({ selectedTestIds, pageMode, selectedDoctor }) => {
+    const scopedReport = withSelectedDoctor(
+      buildScopedReportByTests(selectionModal.report, selectedTestIds),
+      selectedDoctor
+    );
     const separatePages = pageMode === 'separate-pages';
     const selectedReports = separatePages
-      ? selectedTestIds.map((testId) => buildScopedReportByTests(selectionModal.report, [testId]))
+      ? selectedTestIds.map((testId) => withSelectedDoctor(buildScopedReportByTests(selectionModal.report, [testId]), selectedDoctor))
       : [];
     const selectedAction = selectionModal.action;
     setSelectionModal({ open: false, action: '', report: null });
